@@ -1,10 +1,10 @@
-# CT1 – cadastrarUsuario
+# CT1 - cadastrarUsuario
 
 ## Cabeçalho
 
 | Campo | Valor |
 |---|---|
-| **ID e nome** | CT1 – `cadastrarUsuario` |
+| **ID e nome** | CT1 - `cadastrarUsuario` |
 | **Fronteira** | Socket |
 | **Quem chama** | Cliente |
 | **Quem responde** | Servidor |

@@ -1,15 +1,15 @@
-# CT9 – Tabela usuario
+# CT9 - Tabela usuario
 
 ## Cabeçalho
 
 | Campo | Valor |
 |---|---|
-| **ID e nome** | CT9 – Tabela `usuario` |
+| **ID e nome** | CT9 - Tabela `usuario` |
 | **Fronteira** | Banco |
 | **Quem chama** | Servidor |
 | **Quem responde** | Banco de Dados |
 | **Atende** | E2, E3 |
-| **Como chamar** | Tabela `usuario` no SQLite |
+| **Como chamar** | Tabela `usuario` no Postgres |
 
 ## Entrada
 
@@ -37,4 +37,4 @@
 |---|---|
 | `username` já existe | `UNIQUE_VIOLATION` |
 | Campo obrigatório vazio | `NOT_NULL_VIOLATION` |
-| Erro de escrita no arquivo | `SQLITE_IOERR` |
+| Erro de escrita no arquivo | `Postgres_IOERR` |

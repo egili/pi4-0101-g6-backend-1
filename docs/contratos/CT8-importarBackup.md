@@ -1,12 +1,12 @@
-# CT8 – importarBackup
+# CT8 - importarBackup
 
 ## Cabeçalho
 
 | Campo | Valor |
 |---|---|
-| **ID e nome** | CT8 – `importarBackup` |
+| **ID e nome** | CT8 - `importarBackup` |
 | **Fronteira** | Socket |
-| **Quem chama** | Cliente CLI |
+| **Quem chama** | Cliente |
 | **Quem responde** | Servidor |
 | **Atende** | E9 |
 | **Como chamar** | Comando `IMPORT_BACKUP` no canal Socket |

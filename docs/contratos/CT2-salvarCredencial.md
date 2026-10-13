@@ -1,12 +1,12 @@
-# CT2 – salvarCredencial
+# CT2 - salvarCredencial
 
 ## Cabeçalho
 
 | Campo | Valor |
 |---|---|
-| **ID e nome** | CT2 – `salvarCredencial` |
+| **ID e nome** | CT2 - `salvarCredencial` |
 | **Fronteira** | Socket |
-| **Quem chama** | Cliente CLI |
+| **Quem chama** | Cliente |
 | **Quem responde** | Servidor |
 | **Atende** | E4 |
 | **Como chamar** | Comando `SAVE_CRED` no canal Socket |

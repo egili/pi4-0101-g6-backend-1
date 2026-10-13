@@ -1,15 +1,15 @@
-# CT10 – Tabela credencial
+# CT10 - Tabela credencial
 
 ## Cabeçalho
 
 | Campo | Valor |
 |---|---|
-| **ID e nome** | CT10 – Tabela `credencial` |
+| **ID e nome** | CT10 - Tabela `credencial` |
 | **Fronteira** | Banco |
 | **Quem chama** | Servidor |
 | **Quem responde** | Banco de Dados |
 | **Atende** | E4, E5, E6, E8, E9 |
-| **Como chamar** | Tabela `credencial` no SQLite |
+| **Como chamar** | Tabela `credencial` no Postgres |
 
 ## Entrada
 
@@ -43,4 +43,4 @@
 |---|---|
 | `usuario_id` não existe na tabela `usuario` | `FOREIGN_KEY_VIOLATION` |
 | Campo obrigatório vazio | `NOT_NULL_VIOLATION` |
-| Erro de escrita no arquivo | `SQLITE_IOERR` |
+| Erro de escrita no arquivo | `Postgres_IOERR` |

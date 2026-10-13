@@ -1,12 +1,12 @@
-# CT3 – autenticarUsuario
+# CT3 - autenticarUsuario
 
 ## Cabeçalho
 
 | Campo | Valor |
 |---|---|
-| **ID e nome** | CT3 – `autenticarUsuario` |
+| **ID e nome** | CT3 - `autenticarUsuario` |
 | **Fronteira** | Socket |
-| **Quem chama** | Cliente CLI |
+| **Quem chama** | Cliente |
 | **Quem responde** | Servidor |
 | **Atende** | E3 |
 | **Como chamar** | Comando `AUTH` no canal Socket |
