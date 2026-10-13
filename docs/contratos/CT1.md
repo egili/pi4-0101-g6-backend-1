@@ -6,7 +6,7 @@
 |---|---|
 | **ID e nome** | CT1 – `cadastrarUsuario` |
 | **Fronteira** | Socket |
-| **Quem chama** | Cliente CLI |
+| **Quem chama** | Cliente |
 | **Quem responde** | Servidor |
 | **Atende** | E2 |
 | **Como chamar** | Comando `REGISTER` no canal Socket |
