@@ -29,7 +29,7 @@ Servidor principal do sistema. Recebe as requisições do Cliente CLI via Socket
 
 - Java (JDK 17+)
 - Comunicação com o cliente via Socket TCP
-- Banco de dados SQLite (via JDBC)
+- Banco de dados postgres sql (via JDBC)
 - Docker + Docker Compose para empacotar o servidor e o banco
 
 
