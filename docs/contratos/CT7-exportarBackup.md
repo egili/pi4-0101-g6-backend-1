@@ -11,6 +11,12 @@
 | **Atende** | E8 |
 | **Como chamar** | Comando `EXPORT_BACKUP` no canal Socket |
 
+> **Nota de Arquitetura Zero-Trust e Especificação do Arquivo `.vault`:**  
+> O comando `EXPORT_BACKUP` no Servidor limita-se a extrair os registros cifrados da tabela `credencial` e devolvê-los ao Cliente via Socket.  
+> A criação do arquivo portátil `.vault` ocorre **estritamente no Cliente** (via Módulo de Criptografia local). O arquivo gerado é estruturado com um **cabeçalho aberto (metadados com `salt` e `iv`)** e um **corpo cifrado**:
+> 1. **Portabilidade:** O cabeçalho aberto permite que o arquivo seja importado em qualquer terminal ou instalação sem requerer dados prévios do servidor;
+> 2. **Segurança Criptográfica:** O `salt` e o `iv` são parâmetros públicos de inicialização que não revelam as credenciais sem o conhecimento da senha mestra secreta. O Servidor nunca recebe nem armazena o arquivo `.vault` ou a chave de backup.
+
 ## Entrada
 
 | Campo | Tipo | Obrigatório | Exemplo |

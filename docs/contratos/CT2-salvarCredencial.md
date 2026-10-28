@@ -16,6 +16,7 @@
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
 | `usuarioId` | inteiro | Sim | `1` |
+| `tokenSessao` | texto | Sim | `abc123xyz...` |
 | `servico` | texto | Sim | `Gmail` |
 | `usuarioServico` | texto | Sim | `eliseu@gmail.com` |
 | `dadosCifrados` | texto | Sim | `U2FsdGVkX1+...` |
@@ -32,6 +33,7 @@
 
 | Quando | O que volta |
 |---|---|
+| `tokenSessao` inválido ou expirado | `SESSAO_INVALIDA` |
 | `usuarioId` inválido | `USUARIO_NAO_ENCONTRADO` |
 | `dadosCifrados` vazio | `DADOS_INVALIDOS` |
 | `iv` vazio | `DADOS_INVALIDOS` |
