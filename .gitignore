@@ -1,1 +1,13 @@
+# Variáveis de ambiente locais
+.env
+
+# Build e IDEs
 target/
+build/
+.idea/
+*.iml
+.vscode/
+*.class
+
+# Logs
+*.log
