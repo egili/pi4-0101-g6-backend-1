@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: br.puc.cofre.backend1.ConcurrencyTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.297 s -- in br.puc.cofre.backend1.ConcurrencyTest
