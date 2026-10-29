@@ -15,9 +15,17 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
+        <!-- Dependência principal da API REST -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- NOVA DEPENDÊNCIA: JUnit para os testes -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>
