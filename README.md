@@ -2,7 +2,7 @@
 
 Sistema cliente-servidor desenvolvido em Java para o gerenciamento, armazenamento seguro e cifragem de credenciais pessoais, garantindo que o servidor central não tenha acesso aos dados em texto claro.
 
-Servidor principal do sistema. Recebe as requisições do Cliente CLI via Socket, gerencia autenticação, faz o CRUD de credenciais e conversa com o banco de dados. Armazena apenas dados já cifrados e nunca acessa a senha mestra nem o conteúdo em texto claro.
+Servidor principal do sistema. Recebe as requisições do Cliente CLI via Socket, gerencia autenticação, faz o CRUD de credenciais e conversa com o banco de dados. Armazena apenas dados já cifrados e nunca acessa a senha mestra nem o conteúdo em texto.
 
 ## Documentação
 
