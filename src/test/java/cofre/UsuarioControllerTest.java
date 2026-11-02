@@ -1,4 +1,4 @@
-package br.puc.cofre.backend1;
+package cofre;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

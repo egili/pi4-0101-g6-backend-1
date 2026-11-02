@@ -1,4 +1,4 @@
-package br.puc.cofre.backend1.controller;
+package cofre;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
