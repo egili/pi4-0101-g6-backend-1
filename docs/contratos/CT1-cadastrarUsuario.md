@@ -5,11 +5,11 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT1 - `cadastrarUsuario` |
-| **Fronteira** | Socket |
+| **Fronteira** | HTTP (REST) |
 | **Quem chama** | Cliente |
 | **Quem responde** | Servidor |
 | **Atende** | E2 |
-| **Como chamar** | Comando `REGISTER` no canal Socket |
+| **Como chamar** | `POST /usuarios` com corpo JSON |
 
 > **Nota de Arquitetura Zero-Trust:**  
 > - O `salt` é gerado aleatoriamente pelo Cliente (via Módulo de Criptografia) e enviado ao Servidor para ser persistido junto ao usuário na tabela `usuario`, permitindo que o Cliente o recupere antes de futuros logins (Fase 1 do CT3).  
