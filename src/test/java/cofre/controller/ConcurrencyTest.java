@@ -12,6 +12,7 @@ import java.util.concurrent.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+//dps apagar o disabled
 @Disabled("Desativado temporariamente pois requer banco rodando, o que não ocorre no ambiente de CI")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConcurrencyTest {
