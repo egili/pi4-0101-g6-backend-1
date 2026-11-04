@@ -13,7 +13,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-//lembrar de excluir o disabled
+//lembrar de excluir o disabled quando tivermos o banco
 @Disabled("Desativado temporariamente para não quebrar o CI. Requer config de banco.")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UsuarioControllerTest {
