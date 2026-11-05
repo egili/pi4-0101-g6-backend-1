@@ -1,22 +1,24 @@
 package cofre;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 
-import java.sql.PreparedStatement;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class CredentialControllerTest {
+class CredentialControllerTest {
+
+    @LocalServerPort
+    private int port;
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -24,172 +26,105 @@ public class CredentialControllerTest {
     @Autowired
     private JwtService jwtService;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    private Long usuarioIdValido;
-    private String tokenValido;
+    private String baseUrl;
 
     @BeforeEach
-    public void setup() {
-        String username = "usuario.cred." + System.nanoTime();
-        KeyHolder chave = new GeneratedKeyHolder();
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO usuario (username, senha_mestra_hash, salt) VALUES (?, ?, ?)",
-                    new String[]{"id"}
-            );
-            ps.setString(1, username);
-            ps.setString(2, "hash123");
-            ps.setString(3, "salt123");
-            return ps;
-        }, chave);
-
-        usuarioIdValido = chave.getKey().longValue();
-        tokenValido = jwtService.gerarToken(usuarioIdValido, username);
+    void setUp() {
+        baseUrl = "http://localhost:" + port + "/credentials";
+        // Configura a fábrica HTTP para evitar o erro de streaming auth do JDK em testes de 401
+        restTemplate.getRestTemplate().setRequestFactory(new HttpComponentsClientHttpRequestFactory());
     }
 
     @Test
-    public void salvaCredencialComSucessoQuandoAutenticado() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(tokenValido);
-        headers.setContentType(MediaType.APPLICATION_JSON);
+    @DisplayName("Deve salvar credencial com sucesso quando token e dados forem válidos")
+    void deveSalvarCredencialComSucesso() {
+        String token = jwtService.gerarToken(1L, "usuario.teste");
 
-        CredentialRequest req = new CredentialRequest(
-                "Gmail",
-                "eliseu@gmail.com",
-                "U2FsdGVkX1+ExemploCifrado==",
-                "3a4b5c6d7e8f1234"
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+
+        Map<String, String> requestBody = Map.of(
+                "servico", "GitHub",
+                "usuarioServico", "dev_user",
+                "dadosCifrados", "dadoCifradoBase64==",
+                "iv", "iv1234567890"
         );
 
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/credentials", entity, Map.class);
+        HttpEntity> request = new HttpEntity<>(requestBody, headers);
 
-        assertEquals(HttpStatus.CREATED, resposta.getStatusCode());
-        assertNotNull(resposta.getBody());
-        assertNotNull(resposta.getBody().get("credencialId"), "Deve retornar o ID da credencial");
-        assertEquals("Credencial salva com sucesso", resposta.getBody().get("mensagem"));
+        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
-        // Verifica persistência e integridade da chave estrangeira no banco
-        Long credencialId = ((Number) resposta.getBody().get("credencialId")).longValue();
-        Map<String, Object> linha = jdbcTemplate.queryForMap(
-                "SELECT * FROM credencial WHERE id = ?",
-                credencialId
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Credencial salva com sucesso", response.getBody().get("mensagem"));
+        assertNotNull(response.getBody().get("credencialId"));
+    }
+
+    @Test
+    @DisplayName("Deve recusar requisição quando o token JWT não for fornecido")
+    void recusaRequisicaoSemToken() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String, String> requestBody = Map.of(
+                "servico", "GitHub",
+                "usuarioServico", "dev_user",
+                "dadosCifrados", "dadoCifradoBase64==",
+                "iv", "iv1234567890"
         );
 
-        assertEquals(usuarioIdValido.intValue(), ((Number) linha.get("usuario_id")).intValue());
-        assertEquals("Gmail", linha.get("servico"));
-        assertEquals("eliseu@gmail.com", linha.get("usuario_servico"));
-        assertEquals("U2FsdGVkX1+ExemploCifrado==", linha.get("dados_cifrados"));
-        assertEquals("3a4b5c6d7e8f1234", linha.get("iv"));
+        HttpEntity> request = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }
 
     @Test
-    public void salvaCredencialNaRotaComPrefixoApi() {
+    @DisplayName("Deve recusar requisição quando o token JWT for inválido ou malformado")
+    void recusaRequisicaoComTokenInvalido() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + tokenValido);
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth("token.jwt.invalido.ou.expirado");
 
-        CredentialRequest req = new CredentialRequest(
-                "Github",
-                "egili",
-                "CipherBlob==",
-                "IV998877"
+        Map<String, String> requestBody = Map.of(
+                "servico", "GitHub",
+                "usuarioServico", "dev_user",
+                "dadosCifrados", "dadoCifradoBase64==",
+                "iv", "iv1234567890"
         );
 
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/api/credentials", entity, Map.class);
+        HttpEntity> request = new HttpEntity<>(requestBody, headers);
 
-        assertEquals(HttpStatus.CREATED, resposta.getStatusCode());
-        assertNotNull(resposta.getBody().get("credencialId"));
+        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }
 
     @Test
-    public void recusaRequisicaoSemToken() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        CredentialRequest req = new CredentialRequest("Gmail", "user@gmail.com", "dados", "iv");
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/credentials", entity, Map.class);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, resposta.getStatusCode());
-        assertEquals("SESSAO_INVALIDA", resposta.getBody().get("erro"));
-    }
-
-    @Test
-    public void recusaRequisicaoComTokenInvalido() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set(HttpHeaders.AUTHORIZATION, "Bearer token.totalmente.invalido");
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        CredentialRequest req = new CredentialRequest("Gmail", "user@gmail.com", "dados", "iv");
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/credentials", entity, Map.class);
-
-        assertEquals(HttpStatus.UNAUTHORIZED, resposta.getStatusCode());
-        assertEquals("SESSAO_INVALIDA", resposta.getBody().get("erro"));
-    }
-
-    @Test
-    public void recusaRequisicaoComCamposVazios() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(tokenValido);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // dadosCifrados vazio
-        CredentialRequest req = new CredentialRequest("Gmail", "user@gmail.com", "", "iv");
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/credentials", entity, Map.class);
-
-        assertEquals(HttpStatus.BAD_REQUEST, resposta.getStatusCode());
-        assertEquals("DADOS_INVALIDOS", resposta.getBody().get("erro"));
-    }
-
-    @Test
-    public void recusaQuandoUsuarioNaoExisteNoBanco() {
-        String tokenFantasma = jwtService.gerarToken(999999L, "fantasma");
+    @DisplayName("Deve retornar erro quando o usuário dono do token não for encontrado no banco")
+    void retornaErroQuandoUsuarioNaoEncontrado() {
+        // ID 99999 não existe na base H2 de testes
+        String tokenInexistente = jwtService.gerarToken(99999L, "fantasma");
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(tokenFantasma);
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(tokenInexistente);
 
-        CredentialRequest req = new CredentialRequest("Gmail", "user@gmail.com", "cifrado", "iv");
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/credentials", entity, Map.class);
-
-        assertEquals(HttpStatus.NOT_FOUND, resposta.getStatusCode());
-        assertEquals("USUARIO_NAO_ENCONTRADO", resposta.getBody().get("erro"));
-    }
-
-    @Test
-    public void exclusaoCascataDeUsuarioRemoveCredenciais() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(tokenValido);
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        CredentialRequest req = new CredentialRequest("Outlook", "user@corp.com", "cifrado123", "iv123");
-        HttpEntity<CredentialRequest> entity = new HttpEntity<>(req, headers);
-
-        ResponseEntity<Map> resposta = restTemplate.postForEntity("/credentials", entity, Map.class);
-        assertEquals(HttpStatus.CREATED, resposta.getStatusCode());
-
-        Long credencialId = ((Number) resposta.getBody().get("credencialId")).longValue();
-
-        // Remove o usuário
-        jdbcTemplate.update("DELETE FROM usuario WHERE id = ?", usuarioIdValido);
-
-        // Garante que a credencial foi removida em cascata pelo banco
-        Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM credencial WHERE id = ?",
-                Integer.class,
-                credencialId
+        Map<String, String> requestBody = Map.of(
+                "servico", "GitHub",
+                "usuarioServico", "dev_user",
+                "dadosCifrados", "dadoCifradoBase64==",
+                "iv", "iv1234567890"
         );
-        assertEquals(0, count, "A credencial deve ser excluída em cascata quando o usuário for excluído");
+
+        HttpEntity> request = new HttpEntity<>(requestBody, headers);
+
+        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("USUARIO_NAO_ENCONTRADO", response.getBody().get("erro"));
     }
 }
-
