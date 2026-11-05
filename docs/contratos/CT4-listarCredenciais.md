@@ -5,27 +5,25 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT4 - `listarCredenciais` |
-| **Fronteira** | Socket |
-| **Quem chama** | Cliente |
-| **Quem responde** | Servidor |
+| **Fronteira** | HTTP/REST |
+| **Quem chama** | Cliente (Back-end 2) |
+| **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E5 |
-| **Como chamar** | Comando `LIST_CRED` no canal Socket |
+| **Como chamar** | `GET /credentials` com cabeçalho `Authorization: Bearer <tokenSessao>` |
 
 ## Entrada
 
-| Campo | Tipo | Obrigatório | Exemplo |
-|---|---|---|---|
-| `usuarioId` | inteiro | Sim | `1` |
-| `tokenSessao` | texto | Sim | `abc123xyz...` |
-
-## Saída
+Sem corpo. O usuário é identificado pelo token (CT3).
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
-| `credenciais` | lista de objeto (Credencial) | Sim | lista com 3 credenciais |
-| `mensagem` | texto | Sim | `3 credenciais encontradas` |
+| `Authorization` (cabeçalho) | texto | Sim | `Bearer abc123xyz...` |
 
-**Objeto Credencial (dentro da lista):**
+## Saída (`200 OK`)
+
+Corpo JSON: lista de objetos Credencial (lista vazia se o usuário não tiver credenciais).
+
+**Objeto Credencial (cada item da lista):**
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
@@ -37,8 +35,9 @@
 
 ## Erros
 
-| Quando | O que volta |
-|---|---|
-| `tokenSessao` inválido | `SESSAO_INVALIDA` |
-| `usuarioId` não existe | `USUARIO_NAO_ENCONTRADO` |
-| Socket caiu | `ERRO_CONEXAO` |
+Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+
+| Quando | Status HTTP | O que volta |
+|---|---|---|
+| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
+| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |

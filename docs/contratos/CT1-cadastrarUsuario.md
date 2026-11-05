@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT1 - `cadastrarUsuario` |
-| **Fronteira** | HTTP (REST) |
-| **Quem chama** | Cliente |
-| **Quem responde** | Servidor |
+| **Fronteira** | HTTP/REST |
+| **Quem chama** | Cliente (Back-end 2) |
+| **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E2 |
 | **Como chamar** | `POST /usuarios` com corpo JSON |
 
@@ -17,13 +17,15 @@
 
 ## Entrada
 
+Corpo JSON da requisição HTTP.
+
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
 | `username` | texto | Sim | `eliseu.gili` |
 | `senhaMestraHash` | texto | Sim | `a1b2c3d4e5f6...` |
 | `salt` | texto | Sim | `x9y8z7w6v5u4...` |
 
-## Saída
+## Saída (`201 Created`)
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
@@ -32,11 +34,13 @@
 
 ## Erros
 
-| Quando | O que volta |
-|---|---|
-| `username` já existe | `USUARIO_JA_EXISTE` |
-| `username` vazio | `CAMPO_OBRIGATORIO_AUSENTE` |
-| `senhaMestraHash` vazio | `CAMPO_OBRIGATORIO_AUSENTE` |
-| `salt` vazio | `CAMPO_OBRIGATORIO_AUSENTE` |
-| Socket caiu | `ERRO_CONEXAO` |
-| Falha ao gravar no banco | `ERRO_BANCO` |
+Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+
+| Quando | Status HTTP | O que volta |
+|---|---|---|
+| `username` já existe | 409 | `USUARIO_JA_EXISTE` |
+| `username` vazio | 400 | `CAMPO_OBRIGATORIO_AUSENTE` |
+| `senhaMestraHash` vazio | 400 | `CAMPO_OBRIGATORIO_AUSENTE` |
+| `salt` vazio | 400 | `CAMPO_OBRIGATORIO_AUSENTE` |
+| Falha ao gravar no banco | 500 | `ERRO_BANCO` |
+| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
