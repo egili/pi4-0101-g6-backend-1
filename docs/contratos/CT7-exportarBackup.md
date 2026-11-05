@@ -5,26 +5,27 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT7 - `exportarBackup` |
-| **Fronteira** | Socket |
-| **Quem chama** | Cliente |
-| **Quem responde** | Servidor |
+| **Fronteira** | HTTP/REST |
+| **Quem chama** | Cliente (Back-end 2) |
+| **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E8 |
-| **Como chamar** | Comando `EXPORT_BACKUP` no canal Socket |
+| **Como chamar** | `GET /backup` com cabeçalho `Authorization: Bearer <tokenSessao>` |
 
 > **Nota de Arquitetura Zero-Trust e Especificação do Arquivo `.vault`:**  
-> O comando `EXPORT_BACKUP` no Servidor limita-se a extrair os registros cifrados da tabela `credencial` e devolvê-los ao Cliente via Socket.  
+> A rota `GET /backup` limita-se a extrair os registros cifrados da tabela `credencial` e devolvê-los ao Cliente na resposta HTTP.  
 > A criação do arquivo portátil `.vault` ocorre **estritamente no Cliente** (via Módulo de Criptografia local). O arquivo gerado é estruturado com um **cabeçalho aberto (metadados com `salt` e `iv`)** e um **corpo cifrado**:
-> 1. **Portabilidade:** O cabeçalho aberto permite que o arquivo seja importado em qualquer terminal ou instalação sem requerer dados prévios do servidor;
+> 1. **Portabilidade:** O cabeçalho aberto permite que o arquivo seja importado em qualquer instalação do cofre sem requerer dados prévios do servidor;
 > 2. **Segurança Criptográfica:** O `salt` e o `iv` são parâmetros públicos de inicialização que não revelam as credenciais sem o conhecimento da senha mestra secreta. O Servidor nunca recebe nem armazena o arquivo `.vault` ou a chave de backup.
 
 ## Entrada
 
+Sem corpo. O usuário é identificado pelo token (CT3).
+
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
-| `usuarioId` | inteiro | Sim | `1` |
-| `tokenSessao` | texto | Sim | `abc123xyz...` |
+| `Authorization` (cabeçalho) | texto | Sim | `Bearer abc123xyz...` |
 
-## Saída
+## Saída (`200 OK`)
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
@@ -53,9 +54,10 @@
 
 ## Erros
 
-| Quando | O que volta |
-|---|---|
-| `tokenSessao` inválido | `SESSAO_INVALIDA` |
-| `usuarioId` não existe | `USUARIO_NAO_ENCONTRADO` |
-| Nenhuma credencial para exportar | `BACKUP_VAZIO` |
-| Socket caiu | `ERRO_CONEXAO` |
+Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+
+| Quando | Status HTTP | O que volta |
+|---|---|---|
+| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
+| Nenhuma credencial para exportar | 404 | `BACKUP_VAZIO` |
+| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
