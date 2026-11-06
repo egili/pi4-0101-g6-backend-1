@@ -2,7 +2,7 @@ package cofre.controller;
 
 import cofre.model.Usuario;
 import cofre.repository.UsuarioRepository;
-import cofre.service.JwtService;
+import cofre.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,7 +50,8 @@ public class AuthController {
         }
 
         // Gera o Token
-        String token = jwtService.gerarToken(usuario.getUsername());
+        // Mesmo formato de token que as rotas de credenciais e de backup validam (usuarioId no payload)
+        String token = jwtService.gerarToken(usuario.getId(), usuario.getUsername());
 
         return ResponseEntity.ok(Map.of(
             "token", token,
