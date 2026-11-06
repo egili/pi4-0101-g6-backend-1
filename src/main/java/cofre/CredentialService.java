@@ -3,6 +3,8 @@ package cofre;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CredentialService {
 
@@ -33,6 +35,13 @@ public class CredentialService {
         } catch (DataIntegrityViolationException e) {
             throw new UsuarioNaoEncontradoException("USUARIO_NAO_ENCONTRADO");
         }
+    }
+
+    public List<CredencialItem> listarCredenciais(Long usuarioId) {
+        if (usuarioId == null) {
+            throw new IllegalArgumentException("SESSAO_INVALIDA");
+        }
+        return repository.listarPorUsuario(usuarioId);
     }
 }
 

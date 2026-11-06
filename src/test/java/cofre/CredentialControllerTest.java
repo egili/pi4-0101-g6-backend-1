@@ -14,6 +14,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 
 import java.sql.PreparedStatement;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -144,5 +145,108 @@ class CredentialControllerTest {
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("USUARIO_NAO_ENCONTRADO", response.getBody().get("erro"));
+    }
+
+    @Test
+    @DisplayName("GET /credentials devolve só os blobs cifrados do usuário do JWT")
+    void listaApenasCredenciaisDoUsuarioLogado() {
+        Long dono = inserirUsuario("dono.lista");
+        Long outro = inserirUsuario("outro.lista");
+        inserirCredencial(dono, "Gmail", "eliseu@gmail.com", "blob-gmail", "iv-gmail");
+        inserirCredencial(outro, "Banco", "outro@banco.com", "blob-alheio", "iv-alheio");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtService.gerarToken(dono, "dono.lista"));
+
+        ResponseEntity<List> response = restTemplate.exchange(
+                baseUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                List.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().size());
+
+        Map item = (Map) response.getBody().get(0);
+        assertEquals("Gmail", item.get("servico"));
+        assertEquals("eliseu@gmail.com", item.get("usuarioServico"));
+        assertEquals("blob-gmail", item.get("dadosCifrados"));
+        assertEquals("iv-gmail", item.get("iv"));
+        assertNotNull(item.get("credencialId"));
+        assertFalse(response.getBody().toString().contains("blob-alheio"));
+    }
+
+    @Test
+    @DisplayName("GET /credentials devolve lista vazia quando o usuário não tem credenciais")
+    void listaVaziaQuandoUsuarioNaoTemCredenciais() {
+        Long usuario = inserirUsuario("sem.credenciais");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtService.gerarToken(usuario, "sem.credenciais"));
+
+        ResponseEntity<List> response = restTemplate.exchange(
+                baseUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                List.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+    }
+
+    @Test
+    @DisplayName("GET /credentials recusa token ausente")
+    void listarRecusaSemToken() {
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(new HttpHeaders()),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("SESSAO_INVALIDA", response.getBody().get("erro"));
+    }
+
+    @Test
+    @DisplayName("GET /credentials recusa token inválido")
+    void listarRecusaTokenInvalido() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("token.invalido");
+
+        ResponseEntity<Map> response = restTemplate.exchange(
+                baseUrl,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                Map.class
+        );
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("SESSAO_INVALIDA", response.getBody().get("erro"));
+    }
+
+    private Long inserirUsuario(String prefixo) {
+        KeyHolder chave = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO usuario (username, senha_mestra_hash, salt) VALUES (?, ?, ?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, prefixo + "." + System.nanoTime());
+            ps.setString(2, "hashSenha");
+            ps.setString(3, "saltAleatorio");
+            return ps;
+        }, chave);
+        return chave.getKey().longValue();
+    }
+
+    private void inserirCredencial(Long usuarioId, String servico, String usuarioServico, String dadosCifrados, String iv) {
+        jdbcTemplate.update(
+                "INSERT INTO credencial (usuario_id, servico, usuario_servico, dados_cifrados, iv) VALUES (?, ?, ?, ?, ?)",
+                usuarioId, servico, usuarioServico, dadosCifrados, iv
+        );
     }
 }
