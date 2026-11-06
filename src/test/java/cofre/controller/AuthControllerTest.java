@@ -2,7 +2,8 @@ package cofre.controller;
 
 import cofre.model.Usuario;
 import cofre.repository.UsuarioRepository;
-import cofre.JwtService;
+import cofre.service.JwtService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;

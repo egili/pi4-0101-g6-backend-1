@@ -1,4 +1,6 @@
-package cofre;
+package cofre.repository;
+
+import cofre.model.CredencialItem;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

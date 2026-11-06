@@ -1,4 +1,10 @@
-package cofre;
+package cofre.service;
+
+import cofre.CredentialRequest;
+import cofre.CredentialResponse;
+import cofre.UsuarioNaoEncontradoException;
+import cofre.repository.CredentialRepository;
+import cofre.model.CredencialItem;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
