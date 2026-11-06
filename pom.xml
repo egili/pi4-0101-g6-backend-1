@@ -41,7 +41,13 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- NOVAS DEPENDÊNCIAS: Geração de Token JWT -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Geração de Token JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -60,7 +66,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- JUnit para testes (mantido do seu original) -->
+        <!-- NOVA DEPENDÊNCIA: JUnit para os testes -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
