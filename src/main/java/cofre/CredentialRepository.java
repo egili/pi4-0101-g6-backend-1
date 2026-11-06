@@ -6,6 +6,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -47,6 +48,20 @@ public class CredentialRepository {
             throw new RuntimeException("Falha ao obter ID gerado para a credencial");
         }
         return key.longValue();
+    }
+
+    public List<CredencialItem> listarPorUsuario(Long usuarioId) {
+        return jdbc.query(
+                "SELECT id, servico, usuario_servico, dados_cifrados, iv FROM credencial WHERE usuario_id = ? ORDER BY id",
+                (rs, n) -> new CredencialItem(
+                        rs.getLong("id"),
+                        rs.getString("servico"),
+                        rs.getString("usuario_servico"),
+                        rs.getString("dados_cifrados"),
+                        rs.getString("iv")
+                ),
+                usuarioId
+        );
     }
 
     public Optional<Long> buscarUsuarioIdPorCredencialId(Long credencialId) {

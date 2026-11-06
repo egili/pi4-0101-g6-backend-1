@@ -10,6 +10,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 
 import java.sql.PreparedStatement;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -112,5 +113,34 @@ class CredentialRepositoryTest {
     void deveRetornarEmptyQuandoCredencialNaoExistir() {
         Optional<Long> usuarioId = repository.buscarUsuarioIdPorCredencialId(999999L);
         assertTrue(usuarioId.isEmpty());
+    }
+
+    @Test
+    @DisplayName("listarPorUsuario devolve só os blobs cifrados daquele usuario_id")
+    void listaSomenteCredenciaisDoUsuario() {
+        repository.salvar(usuarioIdValido, "Gmail", "eu@gmail.com", "blob-meu", "iv-meu");
+
+        KeyHolder outro = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO usuario (username, senha_mestra_hash, salt) VALUES (?, ?, ?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, "outro.repo." + System.nanoTime());
+            ps.setString(2, "hashSenha");
+            ps.setString(3, "saltAleatorio");
+            return ps;
+        }, outro);
+        repository.salvar(outro.getKey().longValue(), "Banco", "outro@banco.com", "blob-alheio", "iv-alheio");
+
+        List<CredencialItem> lista = repository.listarPorUsuario(usuarioIdValido);
+
+        assertEquals(1, lista.size());
+        CredencialItem item = lista.get(0);
+        assertEquals("Gmail", item.servico());
+        assertEquals("eu@gmail.com", item.usuarioServico());
+        assertEquals("blob-meu", item.dadosCifrados());
+        assertEquals("iv-meu", item.iv());
+        assertNotNull(item.credencialId());
     }
 }

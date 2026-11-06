@@ -44,6 +44,7 @@ public class BackupControllerTest {
                 "usuario_servico VARCHAR(255) NOT NULL, " +
                 "dados_cifrados VARCHAR(4096) NOT NULL, " +
                 "iv VARCHAR(255) NOT NULL)");
+        jdbc.execute("DELETE FROM credencial");
     }
 
     @Test
