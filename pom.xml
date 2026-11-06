@@ -15,23 +15,26 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
-        <!-- Dependência principal da API REST -->
+        <!-- API REST -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- Substituímos o JDBC pelo JPA para usar @Entity e JpaRepository -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
+        <!-- Driver do PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Banco em memória para testes (mantido do seu original) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
