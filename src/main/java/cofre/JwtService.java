@@ -14,7 +14,7 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
-@Service
+@Service("jwtCredencialService")
 public class JwtService {
 
     private static final String HMAC_ALGORITHM = "HmacSHA256";

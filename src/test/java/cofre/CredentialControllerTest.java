@@ -9,7 +9,11 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 
+import java.sql.PreparedStatement;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,6 +30,9 @@ class CredentialControllerTest {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private String baseUrl;
 
     @BeforeEach
@@ -38,7 +45,18 @@ class CredentialControllerTest {
     @Test
     @DisplayName("Deve salvar credencial com sucesso quando token e dados forem válidos")
     void deveSalvarCredencialComSucesso() {
-        String token = jwtService.gerarToken(1L, "usuario.teste");
+        KeyHolder chave = new GeneratedKeyHolder();
+        jdbcTemplate.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO usuario (username, senha_mestra_hash, salt) VALUES (?, ?, ?)",
+                    new String[]{"id"}
+            );
+            ps.setString(1, "usuario.controller." + System.nanoTime());
+            ps.setString(2, "hashSenha");
+            ps.setString(3, "saltAleatorio");
+            return ps;
+        }, chave);
+        String token = jwtService.gerarToken(chave.getKey().longValue(), "usuario.teste");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
