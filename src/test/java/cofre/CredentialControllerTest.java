@@ -41,6 +41,7 @@ class CredentialControllerTest {
         baseUrl = "http://localhost:" + port + "/credentials";
         // Configura a fábrica HTTP para evitar o erro de streaming auth do JDK em testes de 401
         restTemplate.getRestTemplate().setRequestFactory(new HttpComponentsClientHttpRequestFactory());
+        jdbcTemplate.execute("DELETE FROM credencial");
     }
 
     @Test
