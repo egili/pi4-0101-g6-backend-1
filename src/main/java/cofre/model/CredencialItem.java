@@ -1,4 +1,4 @@
-package cofre;
+package cofre.model;
 
 /**
  * Item da listagem de credenciais (CT4).

@@ -1,5 +1,7 @@
 package cofre;
 
+import cofre.service.JwtService;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;

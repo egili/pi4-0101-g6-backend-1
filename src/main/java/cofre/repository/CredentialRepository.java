@@ -1,4 +1,6 @@
-package cofre;
+package cofre.repository;
+
+import cofre.model.CredencialItem;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -76,5 +78,15 @@ public class CredentialRepository {
             return Optional.empty();
         }
     }
-}
 
+    public void atualizar(Long id, String servico, String usuarioServico, String dadosCifrados, String iv) {
+        jdbc.update(
+                "UPDATE credencial SET servico = ?, usuario_servico = ?, dados_cifrados = ?, iv = ? WHERE id = ?",
+                servico, usuarioServico, dadosCifrados, iv, id
+        );
+    }
+
+    public void deletar(Long id) {
+        jdbc.update("DELETE FROM credencial WHERE id = ?", id);
+    }
+}

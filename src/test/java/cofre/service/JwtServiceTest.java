@@ -1,4 +1,4 @@
-package cofre;
+package cofre.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
