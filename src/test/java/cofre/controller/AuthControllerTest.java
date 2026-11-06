@@ -2,7 +2,7 @@ package cofre.controller;
 
 import cofre.model.Usuario;
 import cofre.repository.UsuarioRepository;
-import cofre.service.JwtService;
+import cofre.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -63,7 +64,7 @@ public class AuthControllerTest {
         usuario.setSenhaMestraHash("hash-falso");
 
         when(usuarioRepository.findByUsername("eliseu")).thenReturn(Optional.of(usuario));
-        when(jwtService.gerarToken(anyString())).thenReturn("token-jwt-falso");
+        when(jwtService.gerarToken(anyLong(), anyString())).thenReturn("token-jwt-falso");
 
         mockMvc.perform(post("/login")
                 .contentType(MediaType.APPLICATION_JSON)
