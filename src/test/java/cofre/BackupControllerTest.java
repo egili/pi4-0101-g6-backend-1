@@ -9,6 +9,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
@@ -79,6 +80,56 @@ public class BackupControllerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, resposta.getStatusCode());
         assertEquals("BACKUP_VAZIO", resposta.getBody().get("erro"));
+    }
+
+    @Test
+    public void recusaImportacaoSemToken() {
+        ResponseEntity<Map> resposta = restTemplate.postForEntity("/backup", List.of(itemValido("Gmail")), Map.class);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, resposta.getStatusCode());
+        assertEquals("SESSAO_INVALIDA", resposta.getBody().get("erro"));
+    }
+
+    @Test
+    public void importaLoteInteiroNaMesmaTransacao() {
+        long id = criarUsuario("bk.importa");
+        List<Map<String, String>> lote = List.of(itemValido("Gmail"), itemValido("Github"));
+
+        ResponseEntity<Map> resposta = restTemplate.exchange("/backup", HttpMethod.POST, comTokenECorpo(id, "bk.importa", lote), Map.class);
+
+        assertEquals(HttpStatus.OK, resposta.getStatusCode());
+        assertEquals(2, resposta.getBody().get("credenciaisInseridas"));
+        assertEquals(2, contaCredenciais(id));
+    }
+
+    @Test
+    public void lotePartidoNaoGravaNada() {
+        long id = criarUsuario("bk.partido");
+        Map<String, String> invalido = new java.util.HashMap<>(itemValido("Github"));
+        invalido.put("iv", "");
+        List<Map<String, String>> lote = List.of(itemValido("Gmail"), invalido);
+
+        ResponseEntity<Map> resposta = restTemplate.exchange("/backup", HttpMethod.POST, comTokenECorpo(id, "bk.partido", lote), Map.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, resposta.getStatusCode());
+        assertEquals("DADOS_INVALIDOS", resposta.getBody().get("erro"));
+        assertEquals(0, contaCredenciais(id));
+    }
+
+    private Map<String, String> itemValido(String servico) {
+        return Map.of("servico", servico, "usuarioServico", "eliseu@" + servico.toLowerCase(),
+                "dadosCifrados", "dados-" + servico, "iv", "iv-" + servico);
+    }
+
+    private int contaCredenciais(long id) {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM credencial WHERE usuario_id = ?", Integer.class, id);
+    }
+
+    private HttpEntity<Object> comTokenECorpo(long id, String username, Object corpo) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtService.gerarToken(id, username));
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(corpo, headers);
     }
 
     private long criarUsuario(String username) {
