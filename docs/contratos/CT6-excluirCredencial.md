@@ -5,31 +5,33 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT6 - `excluirCredencial` |
-| **Fronteira** | Socket |
-| **Quem chama** | Cliente |
-| **Quem responde** | Servidor |
+| **Fronteira** | HTTP/REST |
+| **Quem chama** | Cliente (Back-end 2) |
+| **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E6 |
-| **Como chamar** | Comando `DELETE_CRED` no canal Socket |
+| **Como chamar** | `DELETE /credentials/{id}` com cabeçalho `Authorization: Bearer <tokenSessao>` |
 
 ## Entrada
 
-| Campo | Tipo | Obrigatório | Exemplo |
-|---|---|---|---|
-| `usuarioId` | inteiro | Sim | `1` |
-| `tokenSessao` | texto | Sim | `abc123xyz...` |
-| `credencialId` | inteiro | Sim | `10` |
-
-## Saída
+Sem corpo. O `credencialId` vai no caminho da rota. O Servidor só exclui credenciais que pertencem ao usuário do token.
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
-| `mensagem` | texto | Sim | `Credencial excluída com sucesso` |
+| `Authorization` (cabeçalho) | texto | Sim | `Bearer abc123xyz...` |
+| `credencialId` (no caminho `{id}`) | inteiro | Sim | `10` |
+
+## Saída (`204 No Content`)
+
+Sem corpo. O sucesso é indicado apenas pelo status `204`.
 
 ## Erros
 
-| Quando | O que volta |
-|---|---|
-| `credencialId` não existe | `CREDENCIAL_NAO_ENCONTRADA` |
-| `tokenSessao` inválido | `SESSAO_INVALIDA` |
-| Falha ao excluir no banco | `ERRO_BANCO` |
-| Socket caiu | `ERRO_CONEXAO` |
+Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+
+| Quando | Status HTTP | O que volta |
+|---|---|---|
+| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
+| `credencialId` não existe | 404 | `CREDENCIAL_NAO_ENCONTRADA` |
+| Credencial pertence a outro usuário | 403 | `ACESSO_NEGADO` |
+| Falha ao excluir no banco | 500 | `ERRO_BANCO` |
+| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |

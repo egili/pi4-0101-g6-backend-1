@@ -1,4 +1,10 @@
-package cofre;
+package cofre.service;
+
+import cofre.CredentialRequest;
+import cofre.CredentialResponse;
+import cofre.UsuarioNaoEncontradoException;
+import cofre.repository.CredentialRepository;
+import cofre.model.CredencialItem;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -159,6 +166,28 @@ class CredentialServiceTest {
 
         assertEquals("DADOS_INVALIDOS", exception.getMessage());
         verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("listarCredenciais devolve a lista cifrada do repositório")
+    void listaCredenciaisDoUsuario() {
+        Long usuarioId = 1L;
+        List<CredencialItem> armazenadas = List.of(
+                new CredencialItem(10L, "Gmail", "eu@gmail.com", "blob", "iv")
+        );
+        when(repository.listarPorUsuario(usuarioId)).thenReturn(armazenadas);
+
+        List<CredencialItem> lista = credentialService.listarCredenciais(usuarioId);
+
+        assertEquals(armazenadas, lista);
+        verify(repository, times(1)).listarPorUsuario(usuarioId);
+    }
+
+    @Test
+    @DisplayName("listarCredenciais recusa usuarioId nulo")
+    void listarRecusaUsuarioNulo() {
+        assertThrows(IllegalArgumentException.class, () -> credentialService.listarCredenciais(null));
+        verify(repository, never()).listarPorUsuario(any());
     }
 
     private static Stream<Arguments> requisicoesInvalidasProvider() {

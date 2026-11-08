@@ -1,4 +1,6 @@
-package cofre;
+package cofre.repository;
+
+import cofre.model.CredencialItem;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -7,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -51,6 +52,20 @@ public class CredentialRepository {
         return key.longValue();
     }
 
+    public List<CredencialItem> listarPorUsuario(Long usuarioId) {
+        return jdbc.query(
+                "SELECT id, servico, usuario_servico, dados_cifrados, iv FROM credencial WHERE usuario_id = ? ORDER BY id",
+                (rs, n) -> new CredencialItem(
+                        rs.getLong("id"),
+                        rs.getString("servico"),
+                        rs.getString("usuario_servico"),
+                        rs.getString("dados_cifrados"),
+                        rs.getString("iv")
+                ),
+                usuarioId
+        );
+    }
+
     public Optional<Long> buscarUsuarioIdPorCredencialId(Long credencialId) {
         try {
             Long usuarioId = jdbc.queryForObject(
@@ -63,22 +78,14 @@ public class CredentialRepository {
             return Optional.empty();
         }
     }
-
-    public List<Map<String, Object>> listarPorUsuario(Long usuarioId) {
-        if (usuarioId == null) {
-            return List.of();
-        }
-        return jdbc.query(
-                "SELECT id, servico, usuario_servico, dados_cifrados, iv FROM credencial WHERE usuario_id = ? ORDER BY id ASC",
-                (rs, rowNum) -> Map.of(
-                        "credencialId", rs.getLong("id"),
-                        "servico", rs.getString("servico"),
-                        "usuarioServico", rs.getString("usuario_servico"),
-                        "dadosCifrados", rs.getString("dados_cifrados"),
-                        "iv", rs.getString("iv")
-                ),
-                usuarioId
+    public void atualizar(Long id, String servico, String usuarioServico, String dadosCifrados, String iv) {
+        jdbc.update(
+                "UPDATE credencial SET servico = ?, usuario_servico = ?, dados_cifrados = ?, iv = ? WHERE id = ?",
+                servico, usuarioServico, dadosCifrados, iv, id
         );
     }
-}
 
+    public void deletar(Long id) {
+        jdbc.update("DELETE FROM credencial WHERE id = ?", id);
+    }
+}
