@@ -30,6 +30,7 @@ public class CredentialController {
             @RequestHeader(value = "tokenSessao", required = false) String tokenSessaoHeader,
             @RequestBody(required = false) CredentialRequest req) {
 
+        // Extrai e valida o token JWT do header Authorization ou tokenSessao
         String token = authHeader != null && !authHeader.isBlank() ? authHeader : tokenSessaoHeader;
         Optional<Long> usuarioIdOpt = jwtService.extrairUsuarioId(token);
 
@@ -38,6 +39,7 @@ public class CredentialController {
                     .body(Map.of("erro", "SESSAO_INVALIDA"));
         }
 
+        // Valida se os campos obrigatórios foram fornecidos
         if (req == null || req.isInvalido()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("erro", "DADOS_INVALIDOS"));
@@ -72,7 +74,7 @@ public class CredentialController {
         }
 
         try {
-            List> credenciais = credentialService.listarCredenciais(usuarioIdOpt.get());
+            List<Map<String, Object>> credenciais = credentialService.listarCredenciais(usuarioIdOpt.get());
             return ResponseEntity.ok(Map.of(
                     "credenciais", credenciais,
                     "mensagem", credenciais.size() + " credenciais encontradas"
@@ -86,3 +88,4 @@ public class CredentialController {
         }
     }
 }
+
