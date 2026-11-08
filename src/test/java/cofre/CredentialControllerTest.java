@@ -31,7 +31,6 @@ class CredentialControllerTest {
     @BeforeEach
     void setUp() {
         baseUrl = "http://localhost:" + port + "/credentials";
-        // Configura a fábrica HTTP para evitar o erro de streaming auth do JDK em testes de 401
         restTemplate.getRestTemplate().setRequestFactory(new HttpComponentsClientHttpRequestFactory());
     }
 
@@ -52,7 +51,6 @@ class CredentialControllerTest {
         );
 
         HttpEntity> request = new HttpEntity<>(requestBody, headers);
-
         ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -75,7 +73,6 @@ class CredentialControllerTest {
         );
 
         HttpEntity> request = new HttpEntity<>(requestBody, headers);
-
         ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -96,7 +93,6 @@ class CredentialControllerTest {
         );
 
         HttpEntity> request = new HttpEntity<>(requestBody, headers);
-
         ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
@@ -105,7 +101,6 @@ class CredentialControllerTest {
     @Test
     @DisplayName("Deve retornar erro quando o usuário dono do token não for encontrado no banco")
     void retornaErroQuandoUsuarioNaoEncontrado() {
-        // ID 99999 não existe na base H2 de testes
         String tokenInexistente = jwtService.gerarToken(99999L, "fantasma");
 
         HttpHeaders headers = new HttpHeaders();
@@ -120,7 +115,6 @@ class CredentialControllerTest {
         );
 
         HttpEntity> request = new HttpEntity<>(requestBody, headers);
-
         ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

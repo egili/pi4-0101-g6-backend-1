@@ -1,61 +1,88 @@
 package cofre;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+@RestController
+public class CredentialController {
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class CredentialControllerTest {
+    private final CredentialService credentialService;
+    private final JwtService jwtService;
 
-    @LocalServerPort
-    private int port;
-
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    @Autowired
-    private JwtService jwtService;
-
-    private String baseUrl;
-
-    @BeforeEach
-    void setUp() {
-        baseUrl = "http://localhost:" + port + "/credentials";
+    public CredentialController(CredentialService credentialService, JwtService jwtService) {
+        this.credentialService = credentialService;
+        this.jwtService = jwtService;
     }
 
-    @Test
-    @DisplayName("Deve retornar unauthorized ao tentar listar credenciais sem token")
-    void deveRetornarUnauthorizedSemToken() {
-        ResponseEntity response = restTemplate.getForEntity(baseUrl, Map.class);
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("SESSAO_INVALIDA", response.getBody().get("erro"));
+    @PostMapping({"/credentials", "/api/credentials"})
+    public ResponseEntity<?> salvarCredencial(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
+            @RequestHeader(value = "tokenSessao", required = false) String tokenSessaoHeader,
+            @RequestBody(required = false) CredentialRequest req) {
+
+        String token = authHeader != null && !authHeader.isBlank() ? authHeader : tokenSessaoHeader;
+        Optional<Long> usuarioIdOpt = jwtService.extrairUsuarioId(token);
+
+        if (usuarioIdOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("erro", "SESSAO_INVALIDA"));
+        }
+
+        if (req == null || req.isInvalido()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("erro", "DADOS_INVALIDOS"));
+        }
+
+        try {
+            CredentialResponse response = credentialService.salvarCredencial(usuarioIdOpt.get(), req);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (UsuarioNaoEncontradoException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("erro", "USUARIO_NAO_ENCONTRADO"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("erro", "DADOS_INVALIDOS"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("erro", "ERRO_BANCO"));
+        }
     }
 
-    @Test
-    @DisplayName("Deve listar credenciais com sucesso quando o token for válido")
-    void deveListarCredenciaisComSucesso() {
-        // Gera um token válido para teste (ex: usuarioId 1)
-        String token = jwtService.gerarToken(1L, "usuarioTeste");
+    @GetMapping({"/credentials", "/api/credentials"})
+    public ResponseEntity<?> listarCredenciais(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
+            @RequestHeader(value = "tokenSessao", required = false) String tokenSessaoHeader) {
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(token);
-        HttpEntity<Void> request = new HttpEntity<>(headers);
+        String token = authHeader != null && !authHeader.isBlank() ? authHeader : tokenSessaoHeader;
+        Optional<Long> usuarioIdOpt = jwtService.extrairUsuarioId(token);
 
-        ResponseEntity response = restTemplate.exchange(baseUrl, HttpMethod.GET, request, Map.class);
+        if (usuarioIdOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("erro", "SESSAO_INVALIDA"));
+        }
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().containsKey("credenciais"));
+        try {
+            List> credenciais = credentialService.listarCredenciais(usuarioIdOpt.get());
+            return ResponseEntity.ok(Map.of(
+                    "credenciais", credenciais,
+                    "mensagem", credenciais.size() + " credenciais encontradas"
+            ));
+        } catch (UsuarioNaoEncontradoException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("erro", "USUARIO_NAO_ENCONTRADO"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("erro", "ERRO_BANCO"));
+        }
     }
 }
