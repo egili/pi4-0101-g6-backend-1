@@ -50,8 +50,8 @@ class CredentialControllerTest {
                 "iv", "iv1234567890"
         );
 
-        HttpEntity> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -72,8 +72,8 @@ class CredentialControllerTest {
                 "iv", "iv1234567890"
         );
 
-        HttpEntity> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }
@@ -92,8 +92,8 @@ class CredentialControllerTest {
                 "iv", "iv1234567890"
         );
 
-        HttpEntity> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }
@@ -114,8 +114,8 @@ class CredentialControllerTest {
                 "iv", "iv1234567890"
         );
 
-        HttpEntity> request = new HttpEntity<>(requestBody, headers);
-        ResponseEntity response = restTemplate.postForEntity(baseUrl, request, Map.class);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(requestBody, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(baseUrl, request, Map.class);
 
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNotNull(response.getBody());
