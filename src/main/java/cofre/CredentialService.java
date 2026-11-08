@@ -3,6 +3,9 @@ package cofre;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class CredentialService {
 
@@ -33,6 +36,13 @@ public class CredentialService {
         } catch (DataIntegrityViolationException e) {
             throw new UsuarioNaoEncontradoException("USUARIO_NAO_ENCONTRADO");
         }
+    }
+
+    public List<Map<String, Object>> listarCredenciais(Long usuarioId) {
+        if (usuarioId == null || !repository.usuarioExiste(usuarioId)) {
+            throw new UsuarioNaoEncontradoException("USUARIO_NAO_ENCONTRADO");
+        }
+        return repository.listarPorUsuario(usuarioId);
     }
 }
 
