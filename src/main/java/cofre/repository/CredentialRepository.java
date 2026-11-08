@@ -78,7 +78,6 @@ public class CredentialRepository {
             return Optional.empty();
         }
     }
-
     public void atualizar(Long id, String servico, String usuarioServico, String dadosCifrados, String iv) {
         jdbc.update(
                 "UPDATE credencial SET servico = ?, usuario_servico = ?, dados_cifrados = ?, iv = ? WHERE id = ?",

@@ -84,7 +84,14 @@ public class CredentialController {
         }
 
         try {
-            return ResponseEntity.ok(credentialService.listarCredenciais(usuarioIdOpt.get()));
+            var credenciais = credentialService.listarCredenciais(usuarioIdOpt.get());
+            return ResponseEntity.ok(Map.of(
+                    "credenciais", credenciais,
+                    "mensagem", credenciais.size() + " credenciais encontradas"
+            ));
+        } catch (UsuarioNaoEncontradoException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("erro", "USUARIO_NAO_ENCONTRADO"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("erro", "ERRO_BANCO"));
