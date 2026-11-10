@@ -3,7 +3,10 @@ package cofre.controller;
 import cofre.model.Usuario;
 import cofre.repository.UsuarioRepository;
 import cofre.service.JwtService;
+import cofre.service.LimiteLogin;
+import cofre.service.SaltFalso;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,39 +25,48 @@ public class AuthController {
     @Autowired
     private JwtService jwtService;
 
-    // 1. GET /salt/{user} - O Front busca o salt ANTES de fazer o login
+    @Autowired
+    private SaltFalso saltFalso;
+
+    @Autowired
+    private LimiteLogin limiteLogin;
+
+    // 1. GET /salt/{user} - O Front busca o salt ANTES de fazer o login.
+    // Usuário inexistente recebe um salt falso e estável, então a resposta não revela quem tem conta.
     @GetMapping("/salt/{user}")
     public ResponseEntity<?> getSalt(@PathVariable String user) {
         Optional<Usuario> usuario = usuarioRepository.findByUsername(user);
-        
-        if (usuario.isPresent()) {
-            return ResponseEntity.ok(Map.of("salt", usuario.get().getSalt()));
-        }
-        return ResponseEntity.status(404).body(Map.of("erro", "Usuário não encontrado"));
+        String salt = usuario.map(Usuario::getSalt).orElseGet(() -> saltFalso.gerar(user));
+        return ResponseEntity.ok(Map.of("salt", salt));
     }
 
     // 2. POST /login - O Front manda o hash e recebe o Token JWT
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletRequest request) {
         String username = body.get("username");
         String hashLogin = body.get("hashLogin");
+        String chaveUsuario = "usuario:" + username;
+        String chaveIp = "ip:" + request.getRemoteAddr();
+
+        if (limiteLogin.bloqueado(chaveUsuario, LimiteLogin.MAX_FALHAS_USUARIO)
+                || limiteLogin.bloqueado(chaveIp, LimiteLogin.MAX_FALHAS_IP)) {
+            return ResponseEntity.status(429)
+                    .body(Map.of("erro", "Muitas tentativas de login. Aguarde 15 minutos e tente de novo."));
+        }
 
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
 
-        if (usuarioOpt.isEmpty()) {
+        if (usuarioOpt.isEmpty() || hashLogin == null || !MessageDigest.isEqual(
+                usuarioOpt.get().getSenhaMestraHash().getBytes(StandardCharsets.UTF_8),
+                hashLogin.getBytes(StandardCharsets.UTF_8))) {
+            limiteLogin.registrarFalha(chaveUsuario);
+            limiteLogin.registrarFalha(chaveIp);
             return ResponseEntity.status(401).body(Map.of("erro", "Usuário ou senha inválidos"));
         }
 
         Usuario usuario = usuarioOpt.get();
+        limiteLogin.limpar(chaveUsuario);
 
-        // Compara o hash enviado com o hash salvo no banco
-        if (hashLogin == null || !MessageDigest.isEqual(
-                usuario.getSenhaMestraHash().getBytes(StandardCharsets.UTF_8),
-                hashLogin.getBytes(StandardCharsets.UTF_8))) {
-            return ResponseEntity.status(401).body(Map.of("erro", "Usuário ou senha inválidos"));
-        }
-
-        // Gera o Token
         // Mesmo formato de token que as rotas de credenciais e de backup validam (usuarioId no payload)
         String token = jwtService.gerarToken(usuario.getId(), usuario.getUsername());
 

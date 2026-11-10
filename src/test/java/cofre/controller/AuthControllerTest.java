@@ -3,16 +3,22 @@ package cofre.controller;
 import cofre.model.Usuario;
 import cofre.repository.UsuarioRepository;
 import cofre.service.JwtService;
+import cofre.service.LimiteLogin;
+import cofre.service.SaltFalso;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -21,10 +27,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
+@Import({SaltFalso.class, LimiteLogin.class})
 public class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private SaltFalso saltFalso;
 
     // Nós "mockamos" (fingimos) o banco e o gerador de token
     @MockBean
@@ -48,13 +58,29 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void deveRetornar404QuandoUsuarioNaoExisteNoSalt() throws Exception {
-        // Finge que o banco não achou ninguém
+    public void usuarioInexistenteRecebeSaltFalsoEstavel() throws Exception {
         when(usuarioRepository.findByUsername("ninguem")).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/salt/ninguem"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.erro").value("Usuário não encontrado"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.salt").value(saltFalso.gerar("ninguem")));
+    }
+
+    @Test
+    public void saltFalsoNaoDistingueContaInexistenteDeExistente() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setUsername("existe");
+        usuario.setSalt("c2FsdC1yZWFs");
+        when(usuarioRepository.findByUsername("existe")).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findByUsername("nao-existe")).thenReturn(Optional.empty());
+
+        String comConta = mockMvc.perform(get("/salt/existe")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String semConta = mockMvc.perform(get("/salt/nao-existe")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertNotEquals(comConta, semConta);
+        assertEquals(saltFalso.gerar("nao-existe"), saltFalso.gerar("nao-existe"));
     }
 
     @Test
@@ -67,9 +93,7 @@ public class AuthControllerTest {
         when(usuarioRepository.findByUsername("eliseu")).thenReturn(Optional.of(usuario));
         when(jwtService.gerarToken(anyLong(), anyString())).thenReturn("token-jwt-falso");
 
-        mockMvc.perform(post("/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\": \"eliseu\", \"hashLogin\": \"hash-falso\"}"))
+        login("eliseu", "hash-falso", "10.0.0.1")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("token-jwt-falso"))
                 .andExpect(jsonPath("$.usuarioId").value(1));
@@ -83,10 +107,42 @@ public class AuthControllerTest {
 
         when(usuarioRepository.findByUsername("eliseu")).thenReturn(Optional.of(usuario));
 
-        mockMvc.perform(post("/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\": \"eliseu\", \"hashLogin\": \"hash-errado\"}"))
+        login("eliseu", "hash-errado", "10.0.0.2")
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.erro").value("Usuário ou senha inválidos"));
+    }
+
+    @Test
+    public void bloqueiaUsuarioAposCincoFalhasMesmoComSenhaCerta() throws Exception {
+        Usuario usuario = new Usuario();
+        usuario.setId(2L);
+        usuario.setUsername("bloqueado");
+        usuario.setSenhaMestraHash("hash-certo");
+        when(usuarioRepository.findByUsername("bloqueado")).thenReturn(Optional.of(usuario));
+
+        for (int i = 0; i < LimiteLogin.MAX_FALHAS_USUARIO; i++) {
+            login("bloqueado", "errada", "10.0.1." + i).andExpect(status().isUnauthorized());
+        }
+
+        login("bloqueado", "hash-certo", "10.0.2.1").andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    public void bloqueiaIpAposFalhasDeVariosUsuarios() throws Exception {
+        for (int i = 0; i < LimiteLogin.MAX_FALHAS_IP; i++) {
+            login("inexistente" + i, "x", "10.9.9.9").andExpect(status().isUnauthorized());
+        }
+
+        login("qualquer", "x", "10.9.9.9").andExpect(status().isTooManyRequests());
+    }
+
+    private ResultActions login(String username, String hash, String ip) throws Exception {
+        return mockMvc.perform(post("/login")
+                .with(request -> {
+                    request.setRemoteAddr(ip);
+                    return request;
+                })
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\": \"" + username + "\", \"hashLogin\": \"" + hash + "\"}"));
     }
 }
