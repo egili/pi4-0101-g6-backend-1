@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JwtServiceTest {
@@ -22,5 +23,17 @@ public class JwtServiceTest {
         JwtService outra = new JwtService("outra-chave-de-teste-com-mais-de-32-caracteres", 86400L, new ObjectMapper());
 
         assertTrue(outra.extrairUsuarioId(jwt.gerarToken(7L, "eliseu")).isEmpty());
+    }
+
+    @Test
+    public void tokenExpiradoEhRecusado() {
+        JwtService expirado = new JwtService("chave-de-teste-do-cofre-com-mais-de-32-caracteres", -1L, new ObjectMapper());
+
+        assertTrue(expirado.extrairUsuarioId(expirado.gerarToken(7L, "eliseu")).isEmpty());
+    }
+
+    @Test
+    public void segredoCurtoEhRecusadoNaSubida() {
+        assertThrows(IllegalStateException.class, () -> new JwtService("curto", 86400L, new ObjectMapper()));
     }
 }

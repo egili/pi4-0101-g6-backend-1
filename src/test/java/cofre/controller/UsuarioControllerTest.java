@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @TestPropertySource(properties = {
         "jwt.secret=chave-de-teste-do-cofre-com-mais-de-32-caracteres",
-        "jwt.expiration=86400000"
+        "jwt.expiration=86400"
 })
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UsuarioControllerTest {

@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // Tabela credencial em DDL do H2: a entidade não existe no Servidor, então o teste cria a tabela
 @TestPropertySource(properties = {
         "jwt.secret=chave-de-teste-do-cofre-com-mais-de-32-caracteres",
-        "jwt.expiration=86400000"
+        "jwt.expiration=86400"
 })
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class BackupControllerTest {
