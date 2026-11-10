@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Map;
 import java.util.Optional;
 
@@ -46,7 +48,9 @@ public class AuthController {
         Usuario usuario = usuarioOpt.get();
 
         // Compara o hash enviado com o hash salvo no banco
-        if (!usuario.getSenhaMestraHash().equals(hashLogin)) {
+        if (hashLogin == null || !MessageDigest.isEqual(
+                usuario.getSenhaMestraHash().getBytes(StandardCharsets.UTF_8),
+                hashLogin.getBytes(StandardCharsets.UTF_8))) {
             return ResponseEntity.status(401).body(Map.of("erro", "Usuário ou senha inválidos"));
         }
 

@@ -23,9 +23,12 @@ public class JwtService {
     private final ObjectMapper objectMapper;
 
     public JwtService(
-            @Value("${jwt.secret:cofre-digital-chave-secreta-zero-trust-jwt-token-2026-pi4}") String secret,
+            @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration:86400}") long expirationSeconds,
             ObjectMapper objectMapper) {
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalStateException("jwt.secret precisa ter pelo menos 32 caracteres (defina a variável JWT_SECRET)");
+        }
         this.secret = secret;
         this.expirationSeconds = expirationSeconds;
         this.objectMapper = objectMapper;
