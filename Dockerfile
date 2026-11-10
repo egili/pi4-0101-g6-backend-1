@@ -10,5 +10,5 @@ WORKDIR /app
 COPY --from=build /app/target/backend-1-0.0.1-SNAPSHOT.jar app.jar
 RUN addgroup -S app && adduser -S app -G app
 USER app
-EXPOSE 8080
+EXPOSE 8090
 ENTRYPOINT ["java", "-jar", "app.jar"]
