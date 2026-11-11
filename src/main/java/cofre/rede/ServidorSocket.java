@@ -72,8 +72,8 @@ public class ServidorSocket {
         }
     }
 
-    @PreDestroy
-    public void parar() throws IOException {
+    /** Avisa todos os Clientes conectados e fecha as conexões. */
+    public void avisarDesligamento() {
         synchronized (usuarios) {
             for (Parceiro usuario : usuarios) {
                 try {
@@ -85,6 +85,11 @@ public class ServidorSocket {
             }
             usuarios.clear();
         }
+    }
+
+    @PreDestroy
+    public void parar() throws IOException {
+        avisarDesligamento();
         aceitadora.fechar();
     }
 }
