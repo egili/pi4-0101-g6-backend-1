@@ -5,15 +5,15 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT5 - `editarCredencial` |
-| **Fronteira** | HTTP/REST |
+| **Fronteira** | Socket TCP (objetos Serializable) |
 | **Quem chama** | Cliente (Back-end 2) |
 | **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E6 |
-| **Como chamar** | `PUT /credentials/{id}` com corpo JSON e cabeçalho `Authorization: Bearer <tokenSessao>` |
+| **Como chamar** | `PedidoDeAtualizacao` (token, credencialId, servico, usuarioServico, dadosCifrados, iv) |
 
 ## Entrada
 
-Corpo JSON da requisição HTTP. O `credencialId` vai no caminho da rota. O Servidor só altera credenciais que pertencem ao usuário do token.
+Conteúdo do pedido enviado pelo socket. O `credencialId` vai dentro do pedido. O Servidor só altera credenciais que pertencem ao usuário do token.
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
@@ -33,13 +33,13 @@ Corpo JSON da requisição HTTP. O `credencialId` vai no caminho da rota. O Serv
 
 ## Erros
 
-Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+Erros do Servidor voltam na `Resposta` com o campo `erro` preenchido com o código abaixo.
 
-| Quando | Status HTTP | O que volta |
-|---|---|---|
-| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
-| `credencialId` não existe | 404 | `CREDENCIAL_NAO_ENCONTRADA` |
-| Credencial pertence a outro usuário | 403 | `ACESSO_NEGADO` |
-| Nenhum campo para atualizar | 400 | `NADA_PARA_ATUALIZAR` |
-| Falha ao atualizar no banco | 500 | `ERRO_BANCO` |
-| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
+| Quando | O que volta |
+|---|---|
+| Token ausente, inválido ou expirado | `SESSAO_INVALIDA` |
+| `credencialId` não existe | `CREDENCIAL_NAO_ENCONTRADA` |
+| Credencial pertence a outro usuário | `ACESSO_NEGADO` |
+| Nenhum campo para atualizar | `NADA_PARA_ATUALIZAR` |
+| Falha ao atualizar no banco | `ERRO_BANCO` |
+| Falha de conexão (sem resposta) | `ERRO_CONEXAO` (mensagem do Cliente) |

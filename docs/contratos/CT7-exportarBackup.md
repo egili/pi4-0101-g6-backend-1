@@ -5,14 +5,14 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT7 - `exportarBackup` |
-| **Fronteira** | HTTP/REST |
+| **Fronteira** | Socket TCP (objetos Serializable) |
 | **Quem chama** | Cliente (Back-end 2) |
 | **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E8 |
-| **Como chamar** | `GET /backup` com cabeçalho `Authorization: Bearer <tokenSessao>` |
+| **Como chamar** | `PedidoDeExportacao` (token) |
 
 > **Nota de Arquitetura Zero-Trust e Especificação do Arquivo `.vault`:**  
-> A rota `GET /backup` limita-se a extrair os registros cifrados da tabela `credencial` e devolvê-los ao Cliente na resposta HTTP.  
+> O pedido `PedidoDeExportacao` limita-se a extrair os registros cifrados da tabela `credencial` e devolvê-los ao Cliente na `Resposta` do socket.  
 > A criação do arquivo portátil `.vault` ocorre **estritamente no Cliente** (via Módulo de Criptografia local). O arquivo gerado é estruturado com um **cabeçalho aberto (metadados com `salt` e `iv`)** e um **corpo cifrado**:
 > 1. **Portabilidade:** O cabeçalho aberto permite que o arquivo seja importado em qualquer instalação do cofre sem requerer dados prévios do servidor;
 > 2. **Segurança Criptográfica:** O `salt` e o `iv` são parâmetros públicos de inicialização que não revelam as credenciais sem o conhecimento da senha mestra secreta. O Servidor nunca recebe nem armazena o arquivo `.vault` ou a chave de backup.
@@ -54,10 +54,10 @@ Sem corpo. O usuário é identificado pelo token (CT3).
 
 ## Erros
 
-Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+Erros do Servidor voltam na `Resposta` com o campo `erro` preenchido com o código abaixo.
 
-| Quando | Status HTTP | O que volta |
-|---|---|---|
-| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
-| Nenhuma credencial para exportar | 404 | `BACKUP_VAZIO` |
-| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
+| Quando | O que volta |
+|---|---|
+| Token ausente, inválido ou expirado | `SESSAO_INVALIDA` |
+| Nenhuma credencial para exportar | `BACKUP_VAZIO` |
+| Falha de conexão (sem resposta) | `ERRO_CONEXAO` (mensagem do Cliente) |

@@ -2,7 +2,7 @@
 
 Sistema cliente-servidor desenvolvido em Java para o gerenciamento, armazenamento seguro e cifragem de credenciais pessoais, garantindo que o servidor central não tenha acesso aos dados em texto claro.
 
-Servidor principal do sistema. Expõe uma API REST (HTTP) para o Cliente (Back-end 2), gerencia autenticação, faz o CRUD de credenciais e conversa com o banco de dados. Armazena apenas dados já cifrados e nunca acessa a senha mestra nem o conteúdo em texto claro.
+Servidor principal do sistema. Recebe os pedidos do Cliente (Back-end 2) por socket TCP, com uma thread por conexão. Gerencia autenticação, faz o CRUD de credenciais e conversa com o banco de dados. Armazena apenas dados já cifrados e nunca acessa a senha mestra nem o conteúdo em texto claro.
 
 ## Documentação
 
@@ -28,7 +28,7 @@ Servidor principal do sistema. Expõe uma API REST (HTTP) para o Cliente (Back-e
 ## Stack
 
 - Java (JDK 17+)
-- Comunicação com o Cliente via API REST (HTTP/JSON)
+- Comunicação com o Cliente via socket TCP (objetos Serializable, pacote `cofre.protocolo`)
 - Banco de dados postgres sql (via JDBC)
 - Docker + Docker Compose para empacotar o servidor e o banco
 
