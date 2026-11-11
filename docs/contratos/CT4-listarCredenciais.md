@@ -5,11 +5,11 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT4 - `listarCredenciais` |
-| **Fronteira** | HTTP/REST |
+| **Fronteira** | Socket TCP (objetos Serializable) |
 | **Quem chama** | Cliente (Back-end 2) |
 | **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E5 |
-| **Como chamar** | `GET /credentials` com cabeçalho `Authorization: Bearer <tokenSessao>` |
+| **Como chamar** | `PedidoDeListagem` (token) |
 
 ## Entrada
 
@@ -21,7 +21,7 @@ Sem corpo. O usuário é identificado pelo token (CT3).
 
 ## Saída (`200 OK`)
 
-Corpo JSON: lista de objetos Credencial (lista vazia se o usuário não tiver credenciais).
+Lista de objetos Credencial, enviada na `Resposta` (lista vazia se o usuário não tiver credenciais).
 
 **Objeto Credencial (cada item da lista):**
 
@@ -35,9 +35,9 @@ Corpo JSON: lista de objetos Credencial (lista vazia se o usuário não tiver cr
 
 ## Erros
 
-Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+Erros do Servidor voltam na `Resposta` com o campo `erro` preenchido com o código abaixo.
 
-| Quando | Status HTTP | O que volta |
-|---|---|---|
-| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
-| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
+| Quando | O que volta |
+|---|---|
+| Token ausente, inválido ou expirado | `SESSAO_INVALIDA` |
+| Falha de conexão (sem resposta) | `ERRO_CONEXAO` (mensagem do Cliente) |

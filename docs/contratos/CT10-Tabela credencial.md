@@ -9,7 +9,7 @@
 | **Quem chama** | Servidor |
 | **Quem responde** | Banco de Dados |
 | **Atende** | E4, E5, E6, E8, E9 |
-| **Como chamar** | Tabela `credencial` no Postgres |
+| **Como chamar** | `PedidoDeCadastro` (username, senhaMestraHash, salt) |
 
 ## Entrada
 

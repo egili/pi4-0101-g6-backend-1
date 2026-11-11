@@ -5,15 +5,15 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT2 - `salvarCredencial` |
-| **Fronteira** | HTTP/REST |
+| **Fronteira** | Socket TCP (objetos Serializable) |
 | **Quem chama** | Cliente (Back-end 2) |
 | **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E4 |
-| **Como chamar** | `POST /credentials` com corpo JSON e cabeçalho `Authorization: Bearer <tokenSessao>` |
+| **Como chamar** | `PedidoDeCriacao` (token, servico, usuarioServico, dadosCifrados, iv) |
 
 ## Entrada
 
-Corpo JSON da requisição HTTP. O dono da credencial é o usuário identificado pelo token (CT3); o corpo não traz `usuarioId`.
+Conteúdo do pedido enviado pelo socket. O dono da credencial é o usuário identificado pelo token (CT3); o corpo não traz `usuarioId`.
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
@@ -32,12 +32,12 @@ Corpo JSON da requisição HTTP. O dono da credencial é o usuário identificado
 
 ## Erros
 
-Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+Erros do Servidor voltam na `Resposta` com o campo `erro` preenchido com o código abaixo.
 
-| Quando | Status HTTP | O que volta |
-|---|---|---|
-| Token ausente, inválido ou expirado | 401 | `SESSAO_INVALIDA` |
-| `dadosCifrados` vazio | 400 | `DADOS_INVALIDOS` |
-| `iv` vazio | 400 | `DADOS_INVALIDOS` |
-| Falha ao gravar no banco | 500 | `ERRO_BANCO` |
-| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
+| Quando | O que volta |
+|---|---|
+| Token ausente, inválido ou expirado | `SESSAO_INVALIDA` |
+| `dadosCifrados` vazio | `DADOS_INVALIDOS` |
+| `iv` vazio | `DADOS_INVALIDOS` |
+| Falha ao gravar no banco | `ERRO_BANCO` |
+| Falha de conexão (sem resposta) | `ERRO_CONEXAO` (mensagem do Cliente) |

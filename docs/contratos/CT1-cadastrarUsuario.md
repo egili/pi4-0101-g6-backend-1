@@ -5,11 +5,11 @@
 | Campo | Valor |
 |---|---|
 | **ID e nome** | CT1 - `cadastrarUsuario` |
-| **Fronteira** | HTTP/REST |
+| **Fronteira** | Socket TCP (objetos Serializable) |
 | **Quem chama** | Cliente (Back-end 2) |
 | **Quem responde** | Servidor (Back-end 1) |
 | **Atende** | E2 |
-| **Como chamar** | `POST /usuarios` com corpo JSON |
+| **Como chamar** | `PedidoDeCadastro` (username, senhaMestraHash, salt) |
 
 > **Nota de Arquitetura Zero-Trust:**  
 > - O `salt` é gerado aleatoriamente pelo Cliente (via Módulo de Criptografia) e enviado ao Servidor para ser persistido junto ao usuário na tabela `usuario`, permitindo que o Cliente o recupere antes de futuros logins (Fase 1 do CT3).  
@@ -17,7 +17,7 @@
 
 ## Entrada
 
-Corpo JSON da requisição HTTP.
+Conteúdo do pedido enviado pelo socket.
 
 | Campo | Tipo | Obrigatório | Exemplo |
 |---|---|---|---|
@@ -34,13 +34,13 @@ Corpo JSON da requisição HTTP.
 
 ## Erros
 
-Erros do Servidor voltam no corpo JSON da resposta como `{"erro": "<código>"}`.
+Erros do Servidor voltam na `Resposta` com o campo `erro` preenchido com o código abaixo.
 
-| Quando | Status HTTP | O que volta |
-|---|---|---|
-| `username` já existe | 409 | `USUARIO_JA_EXISTE` |
-| `username` vazio | 400 | `CAMPO_OBRIGATORIO_AUSENTE` |
-| `senhaMestraHash` vazio | 400 | `CAMPO_OBRIGATORIO_AUSENTE` |
-| `salt` vazio | 400 | `CAMPO_OBRIGATORIO_AUSENTE` |
-| Falha ao gravar no banco | 500 | `ERRO_BANCO` |
-| Falha de conexão HTTP (sem resposta) | 503 (gerado pelo Cliente) | `ERRO_CONEXAO` (mensagem do Cliente) |
+| Quando | O que volta |
+|---|---|
+| `username` já existe | `USUARIO_JA_EXISTE` |
+| `username` vazio | `CAMPO_OBRIGATORIO_AUSENTE` |
+| `senhaMestraHash` vazio | `CAMPO_OBRIGATORIO_AUSENTE` |
+| `salt` vazio | `CAMPO_OBRIGATORIO_AUSENTE` |
+| Falha ao gravar no banco | `ERRO_BANCO` |
+| Falha de conexão (sem resposta) | `ERRO_CONEXAO` (mensagem do Cliente) |
