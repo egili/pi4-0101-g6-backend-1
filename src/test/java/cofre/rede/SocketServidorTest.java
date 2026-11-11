@@ -1,5 +1,6 @@
 package cofre.rede;
 
+import cofre.protocolo.ComunicadoDeDesligamento;
 import cofre.protocolo.CredencialDto;
 import cofre.protocolo.Comunicado;
 import cofre.protocolo.Parceiro;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -116,6 +118,49 @@ public class SocketServidorTest {
         }
         sair(ativo);
         sair(ocioso);
+    }
+
+    @Test
+    public void desligamentoAvisaTodosOsClientesConectados() throws Exception {
+        Parceiro a = conectar();
+        Parceiro b = conectar();
+        pedir(a, new PedidoDeSalt("qualquer"));
+        pedir(b, new PedidoDeSalt("qualquer"));
+
+        servidor.avisarDesligamento();
+
+        assertTrue(a.envie() instanceof ComunicadoDeDesligamento);
+        assertTrue(b.envie() instanceof ComunicadoDeDesligamento);
+        a.adeus();
+        b.adeus();
+    }
+
+    @Test
+    public void doisClientesEnviamPedidosAoMesmoTempo() throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            List<Future<Boolean>> resultados = new ArrayList<>();
+            for (int k = 0; k < 2; k++) {
+                final int cliente = k;
+                Callable<Boolean> tarefa = () -> {
+                    Parceiro c = conectar();
+                    boolean tudoCerto = true;
+                    for (int j = 0; j < 20; j++) {
+                        String usuario = "carga" + cliente + "-" + j + "-" + System.nanoTime();
+                        tudoCerto &= pedir(c, new PedidoDeCadastro(usuario, "h", "s")).ok();
+                        tudoCerto &= pedir(c, new PedidoDeSalt(usuario)).ok();
+                    }
+                    sair(c);
+                    return tudoCerto;
+                };
+                resultados.add(pool.submit(tarefa));
+            }
+            for (Future<Boolean> r : resultados) {
+                assertTrue(r.get(60, TimeUnit.SECONDS));
+            }
+        } finally {
+            pool.shutdownNow();
+        }
     }
 
     private Parceiro conectar() throws IOException {
