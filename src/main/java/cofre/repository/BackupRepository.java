@@ -1,4 +1,6 @@
-package cofre;
+package cofre.repository;
+
+import cofre.dto.CredentialRequest;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;

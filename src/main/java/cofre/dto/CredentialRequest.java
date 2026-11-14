@@ -1,4 +1,4 @@
-package cofre;
+package cofre.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

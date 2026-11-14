@@ -1,8 +1,12 @@
 package cofre.service;
 
-import cofre.CredentialRequest;
-import cofre.CredentialResponse;
-import cofre.UsuarioNaoEncontradoException;
+import cofre.dto.CredentialResponse;
+
+import cofre.dto.CredentialRequest;
+
+import cofre.dto.CredentialRequest;
+import cofre.dto.CredentialResponse;
+import cofre.service.UsuarioNaoEncontradoException;
 import cofre.repository.CredentialRepository;
 import cofre.model.CredencialItem;
 
