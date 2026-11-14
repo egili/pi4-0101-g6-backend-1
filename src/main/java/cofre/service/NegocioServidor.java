@@ -26,6 +26,8 @@ import cofre.protocolo.PedidoDeSalt;
 import cofre.protocolo.Resposta;
 import cofre.repository.UsuarioRepository;
 import org.springframework.dao.DuplicateKeyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -43,6 +45,10 @@ import java.util.Optional;
 /** Regra de negócio do Servidor. Atende cada pedido recebido por socket e devolve uma Resposta. */
 @Service
 public class NegocioServidor {
+
+    private static final Logger log = LoggerFactory.getLogger(NegocioServidor.class);
+    private static final java.util.Set<String> ERROS_REGISTRADOS = java.util.Set.of(
+            "SESSAO_INVALIDA", "ACESSO_NEGADO", "CREDENCIAL_NAO_ENCONTRADA", "DADOS_INVALIDOS", "BACKUP_VAZIO");
 
     private final UsuarioRepository usuarios;
     private final JdbcTemplate jdbc;
@@ -64,6 +70,14 @@ public class NegocioServidor {
     }
 
     public Resposta processar(Comunicado pedido, String ipDoCliente) {
+        Resposta resposta = despachar(pedido, ipDoCliente);
+        if (resposta.getErro() != null && ERROS_REGISTRADOS.contains(resposta.getErro())) {
+            log.warn("Pedido {} recusado: {}", pedido.getClass().getSimpleName(), resposta.getErro());
+        }
+        return resposta;
+    }
+
+    private Resposta despachar(Comunicado pedido, String ipDoCliente) {
         try {
             if (pedido instanceof PedidoDeSalt p) return salt(p.getUsername());
             if (pedido instanceof PedidoDeCadastro p) return cadastrar(p);
@@ -76,6 +90,7 @@ public class NegocioServidor {
             if (pedido instanceof PedidoDeImportacao p) return importar(p);
             return erro("DADOS_INVALIDOS");
         } catch (RuntimeException e) {
+            log.error("Erro inesperado ao processar {}: {}", pedido.getClass().getSimpleName(), e.getClass().getName());
             return erro("ERRO_BANCO");
         }
     }
@@ -101,8 +116,10 @@ public class NegocioServidor {
                 return ps;
             }, chave);
         } catch (DuplicateKeyException e) {
+            log.warn("Cadastro recusado: nome já existe ({})", p.getUsername());
             return erro("USUARIO_JA_EXISTE");
         }
+        log.info("Cadastro criado: usuário {} (id {})", p.getUsername(), chave.getKey().longValue());
         return ok(mapa("usuarioId", chave.getKey().longValue()));
     }
 
@@ -111,15 +128,18 @@ public class NegocioServidor {
         String chaveIp = "ip:" + ip;
         if (limiteLogin.bloqueado(chaveUsuario, LimiteLogin.MAX_FALHAS_USUARIO)
                 || limiteLogin.bloqueado(chaveIp, LimiteLogin.MAX_FALHAS_IP)) {
+            log.warn("Login bloqueado por excesso de tentativas: usuário {} pelo IP {}", p.getUsername(), ip);
             return erro("MUITAS_TENTATIVAS");
         }
         Optional<Usuario> usuario = usuarios.findByUsername(p.getUsername());
         if (usuario.isEmpty() || p.getHashLogin() == null || !iguais(usuario.get().getSenhaMestraHash(), p.getHashLogin())) {
             limiteLogin.registrarFalha(chaveUsuario);
             limiteLogin.registrarFalha(chaveIp);
+            log.warn("Login recusado: usuário {} pelo IP {}", p.getUsername(), ip);
             return erro("SENHA_INCORRETA");
         }
         limiteLogin.limpar(chaveUsuario);
+        log.info("Login: usuário {} (id {}) pelo IP {}", p.getUsername(), usuario.get().getId(), ip);
         String token = jwtService.gerarToken(usuario.get().getId(), usuario.get().getUsername());
         return ok(mapa("token", token, "usuarioId", usuario.get().getId()));
     }
@@ -184,6 +204,7 @@ public class NegocioServidor {
             lista.add(new CredencialDto(c.credencialId(), c.servico(), c.usuarioServico(), c.dadosCifrados(), c.iv()));
         }
         if (lista.isEmpty()) return erro("BACKUP_VAZIO");
+        log.info("Exportação: usuário {} com {} credenciais", id.get(), lista.size());
         return ok(mapa("credenciais", lista));
     }
 
@@ -199,6 +220,7 @@ public class NegocioServidor {
             reqs.add(req);
         }
         backup.inserirCredenciais(id.get(), reqs);
+        log.info("Importação: usuário {} com {} credenciais", id.get(), reqs.size());
         return ok(mapa("credenciaisInseridas", reqs.size()));
     }
 
