@@ -1,9 +1,13 @@
 package cofre.service;
 
-import cofre.CredentialRequest;
-import cofre.CredentialResponse;
+import cofre.dto.CredentialResponse;
+
+import cofre.dto.CredentialRequest;
+
+import cofre.dto.CredentialRequest;
+import cofre.dto.CredentialResponse;
 import cofre.model.CredencialItem;
-import cofre.UsuarioNaoEncontradoException;
+import cofre.service.UsuarioNaoEncontradoException;
 import cofre.repository.CredentialRepository;
 
 import org.springframework.dao.DataIntegrityViolationException;

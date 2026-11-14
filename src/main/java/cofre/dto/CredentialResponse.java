@@ -1,4 +1,4 @@
-package cofre;
+package cofre.dto;
 
 /**
  * DTO de resposta para salvamento de credencial no cofre.
