@@ -9,6 +9,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/backend-1-0.0.1-SNAPSHOT.jar app.jar
 RUN addgroup -S app && adduser -S app -G app
+RUN mkdir -p /app/logs && chown app:app /app/logs
 USER app
 EXPOSE 8090
 ENTRYPOINT ["java", "-jar", "app.jar"]

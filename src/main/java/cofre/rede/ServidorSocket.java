@@ -5,6 +5,8 @@ import cofre.protocolo.Parceiro;
 import cofre.service.NegocioServidor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
@@ -19,6 +21,8 @@ import java.util.List;
 /** Liga a aceitadora ao ciclo de vida do Spring, avisa os Clientes ao desligar e lê o comando "desativar". */
 @Component
 public class ServidorSocket {
+
+    private static final Logger log = LoggerFactory.getLogger(ServidorSocket.class);
 
     private final NegocioServidor negocio;
     private final ApplicationContext contexto;
@@ -57,15 +61,15 @@ public class ServidorSocket {
 
     /** Comando "desativar" no terminal do Servidor: avisa todos os Clientes e encerra o programa. */
     private void lerComandos() {
-        System.out.println("O servidor esta ativo! Para desativa-lo, use o comando \"desativar\"");
+        log.info("Servidor ativo. Para desativá-lo, use o comando \"desativar\"");
         try (BufferedReader leitor = new BufferedReader(new InputStreamReader(System.in))) {
             String linha;
             while ((linha = leitor.readLine()) != null) {
                 if (linha.trim().equalsIgnoreCase("desativar")) {
-                    System.out.println("O servidor foi desativado!");
+                    log.info("Servidor desativado pelo terminal");
                     System.exit(SpringApplication.exit(contexto, () -> 0));
                 }
-                System.err.println("Comando invalido!");
+                log.warn("Comando inválido no terminal");
             }
         } catch (IOException e) {
             // terminal fechado: o Servidor segue sem comandos
@@ -89,6 +93,7 @@ public class ServidorSocket {
 
     @PreDestroy
     public void parar() throws IOException {
+        log.info("Servidor encerrando: avisando {} cliente(s)", usuarios.size());
         avisarDesligamento();
         aceitadora.fechar();
     }
