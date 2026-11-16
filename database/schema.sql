@@ -8,7 +8,7 @@
 
 -- Criação da tabela usuario (CT9)
 CREATE TABLE IF NOT EXISTS usuario (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     username VARCHAR(255) NOT NULL UNIQUE,
     senha_mestra_hash TEXT NOT NULL,
     salt TEXT NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS usuario (
 -- Criação da tabela credencial (CT10)
 CREATE TABLE IF NOT EXISTS credencial (
     id SERIAL PRIMARY KEY,
-    usuario_id INTEGER NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
+    usuario_id BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
     servico VARCHAR(255) NOT NULL,
     usuario_servico VARCHAR(255) NOT NULL,
     dados_cifrados TEXT NOT NULL,
@@ -28,5 +28,4 @@ CREATE TABLE IF NOT EXISTS credencial (
 );
 
 -- Índices para otimização de consultas
-CREATE INDEX IF NOT EXISTS idx_usuario_username ON usuario(username);
 CREATE INDEX IF NOT EXISTS idx_credencial_usuario_id ON credencial(usuario_id);

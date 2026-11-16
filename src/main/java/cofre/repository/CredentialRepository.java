@@ -80,7 +80,7 @@ public class CredentialRepository {
     }
     public void atualizar(Long id, String servico, String usuarioServico, String dadosCifrados, String iv) {
         jdbc.update(
-                "UPDATE credencial SET servico = ?, usuario_servico = ?, dados_cifrados = ?, iv = ? WHERE id = ?",
+                "UPDATE credencial SET servico = ?, usuario_servico = ?, dados_cifrados = ?, iv = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?",
                 servico, usuarioServico, dadosCifrados, iv, id
         );
     }
