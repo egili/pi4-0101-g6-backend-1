@@ -22,6 +22,12 @@ jobs:
         cache: maven
     - name: Build, testes e cobertura
       run: mvn -B verify
+    - name: Set up JDK 21 (scanner do SonarQube exige 21+)
+      if: ${{ env.SONAR_TOKEN != '' && vars.SONAR_ORGANIZATION != '' && vars.SONAR_PROJECT_KEY != '' }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
     - name: Análise SonarQube
       if: ${{ env.SONAR_TOKEN != '' && vars.SONAR_ORGANIZATION != '' && vars.SONAR_PROJECT_KEY != '' }}
       run: >
