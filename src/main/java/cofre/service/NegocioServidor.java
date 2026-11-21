@@ -6,7 +6,6 @@ import cofre.dto.CredentialRequest;
 
 import cofre.repository.BackupRepository;
 
-import cofre.repository.BackupRepository;
 import cofre.dto.CredentialRequest;
 import cofre.dto.CredentialResponse;
 import cofre.service.UsuarioNaoEncontradoException;
@@ -200,7 +199,7 @@ public class NegocioServidor {
         Optional<Long> id = jwtService.extrairUsuarioId(token);
         if (id.isEmpty()) return erro("SESSAO_INVALIDA");
         List<CredencialDto> lista = new ArrayList<>();
-        for (BackupRepository.CredencialBackup c : backup.listarCredenciais(id.get())) {
+        for (CredencialItem c : credenciais.listarCredenciais(id.get())) {
             lista.add(new CredencialDto(c.credencialId(), c.servico(), c.usuarioServico(), c.dadosCifrados(), c.iv()));
         }
         if (lista.isEmpty()) return erro("BACKUP_VAZIO");
