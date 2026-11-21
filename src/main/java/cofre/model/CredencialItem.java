@@ -11,9 +11,4 @@ public record CredencialItem(
         String dadosCifrados,
         String iv
 ) {
-    public Long getCredencialId() { return credencialId; }
-    public String getServico() { return servico; }
-    public String getUsuarioServico() { return usuarioServico; }
-    public String getDadosCifrados() { return dadosCifrados; }
-    public String getIv() { return iv; }
 }
