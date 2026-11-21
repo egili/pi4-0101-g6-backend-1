@@ -27,15 +27,6 @@ public class BackupRepository {
         ).stream().findFirst();
     }
 
-    public List<CredencialBackup> listarCredenciais(Long usuarioId) {
-        return jdbc.query(
-                "SELECT id, servico, usuario_servico, dados_cifrados, iv FROM credencial WHERE usuario_id = ? ORDER BY id",
-                (rs, n) -> new CredencialBackup(rs.getLong("id"), rs.getString("servico"),
-                        rs.getString("usuario_servico"), rs.getString("dados_cifrados"), rs.getString("iv")),
-                usuarioId
-        );
-    }
-
     @Transactional
     public void inserirCredenciais(Long usuarioId, List<CredentialRequest> credenciais) {
         jdbc.batchUpdate(
@@ -54,5 +45,4 @@ public class BackupRepository {
 
     public record UsuarioBackup(Long usuarioId, String username, String senhaMestraHash, String salt) {}
 
-    public record CredencialBackup(Long credencialId, String servico, String usuarioServico, String dadosCifrados, String iv) {}
 }
