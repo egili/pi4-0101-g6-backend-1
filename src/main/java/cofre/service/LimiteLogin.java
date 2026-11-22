@@ -16,7 +16,7 @@ public class LimiteLogin {
 
     public static final int MAX_FALHAS_USUARIO = 5;
     public static final int MAX_FALHAS_IP = 20;
-    static final Duration JANELA = Duration.ofMinutes(1);
+    static final Duration JANELA = Duration.ofMinutes(15);
     private static final int LIMITE_DE_CHAVES = 10_000;
 
     private final Map<String, Falhas> falhas = new ConcurrentHashMap<>();
