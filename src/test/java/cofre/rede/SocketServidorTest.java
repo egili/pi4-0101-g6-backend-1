@@ -1,5 +1,6 @@
 package cofre.rede;
 
+import cofre.protocolo.PedidoDeTrocaSenha;
 import cofre.protocolo.ComunicadoDeDesligamento;
 import cofre.protocolo.CredencialDto;
 import cofre.protocolo.Comunicado;
@@ -169,6 +170,39 @@ public class SocketServidorTest {
         transmissor.flush();
         ObjectInputStream receptor = Parceiro.novoReceptor(s.getInputStream());
         return new Parceiro(s, receptor, transmissor);
+    }
+
+    @Test
+    public void trocaDeSenhaRecifraAsCredenciaisEMudaOLogin() throws Exception {
+        Parceiro c = conectar();
+        String u = "troca" + System.nanoTime();
+        assertTrue(pedir(c, new PedidoDeCadastro(u, "hash-1", "salt-1")).ok());
+        String token = (String) pedir(c, new PedidoDeLogin(u, "hash-1")).getDados().get("token");
+        pedir(c, new PedidoDeCriacao(token, "Gmail", "eli@gmail.com", "DADOS-1", "IV-1"));
+        pedir(c, new PedidoDeCriacao(token, "GitHub", "eli", "DADOS-2", "IV-2"));
+        List<CredencialDto> atuais = credenciais(pedir(c, new PedidoDeListagem(token)));
+        assertEquals(2, atuais.size());
+
+        assertEquals("SENHA_INCORRETA",
+                pedir(c, new PedidoDeTrocaSenha(token, "errado", "hash-2", "salt-2", recifrar(atuais))).getErro());
+        assertEquals("CREDENCIAIS_DESATUALIZADAS",
+                pedir(c, new PedidoDeTrocaSenha(token, "hash-1", "hash-2", "salt-2", recifrar(atuais.subList(0, 1)))).getErro());
+        assertTrue(pedir(c, new PedidoDeTrocaSenha(token, "hash-1", "hash-2", "salt-2", recifrar(atuais))).ok());
+
+        assertEquals("SENHA_INCORRETA", pedir(c, new PedidoDeLogin(u, "hash-1")).getErro());
+        assertNotNull(pedir(c, new PedidoDeLogin(u, "hash-2")).getDados().get("token"));
+        assertEquals("salt-2", pedir(c, new PedidoDeSalt(u)).getDados().get("salt"));
+        for (CredencialDto d : credenciais(pedir(c, new PedidoDeListagem(token)))) {
+            assertEquals("NOVO-" + d.getServico(), d.getDadosCifrados());
+        }
+    }
+
+    private static List<CredencialDto> recifrar(List<CredencialDto> originais) {
+        List<CredencialDto> novas = new ArrayList<>();
+        for (CredencialDto d : originais) {
+            novas.add(new CredencialDto(d.getCredencialId(), d.getServico(), d.getUsuarioServico(), "NOVO-" + d.getServico(), "IV-N"));
+        }
+        return novas;
     }
 
     private static Resposta pedir(Parceiro c, Comunicado pedido) throws Exception {
