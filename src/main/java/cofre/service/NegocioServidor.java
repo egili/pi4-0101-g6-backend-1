@@ -21,8 +21,10 @@ import cofre.protocolo.PedidoDeExportacao;
 import cofre.protocolo.PedidoDeImportacao;
 import cofre.protocolo.PedidoDeListagem;
 import cofre.protocolo.PedidoDeLogin;
+import cofre.protocolo.PedidoDeTrocaSenha;
 import cofre.protocolo.PedidoDeSalt;
 import cofre.protocolo.Resposta;
+import cofre.repository.TrocaSenhaRepository;
 import cofre.repository.UsuarioRepository;
 import org.springframework.dao.DuplicateKeyException;
 import org.slf4j.Logger;
@@ -56,9 +58,10 @@ public class NegocioServidor {
     private final JwtService jwtService;
     private final CredentialService credenciais;
     private final BackupRepository backup;
+    private final TrocaSenhaRepository trocaSenha;
 
     public NegocioServidor(UsuarioRepository usuarios, JdbcTemplate jdbc, SaltFalso saltFalso, LimiteLogin limiteLogin,
-                           JwtService jwtService, CredentialService credenciais, BackupRepository backup) {
+                           JwtService jwtService, CredentialService credenciais, BackupRepository backup, TrocaSenhaRepository trocaSenha) {
         this.usuarios = usuarios;
         this.jdbc = jdbc;
         this.saltFalso = saltFalso;
@@ -66,6 +69,7 @@ public class NegocioServidor {
         this.jwtService = jwtService;
         this.credenciais = credenciais;
         this.backup = backup;
+        this.trocaSenha = trocaSenha;
     }
 
     public Resposta processar(Comunicado pedido, String ipDoCliente) {
@@ -87,6 +91,7 @@ public class NegocioServidor {
             if (pedido instanceof PedidoDeExclusao p) return excluir(p);
             if (pedido instanceof PedidoDeExportacao p) return exportar(p.getToken());
             if (pedido instanceof PedidoDeImportacao p) return importar(p);
+            if (pedido instanceof PedidoDeTrocaSenha p) return trocarSenha(p);
             return erro("DADOS_INVALIDOS");
         } catch (RuntimeException e) {
             log.error("Erro inesperado ao processar {}: {}", pedido.getClass().getSimpleName(), e.getClass().getName());
@@ -221,6 +226,41 @@ public class NegocioServidor {
         backup.inserirCredenciais(id.get(), reqs);
         log.info("Importação: usuário {} com {} credenciais", id.get(), reqs.size());
         return ok(mapa("credenciaisInseridas", reqs.size()));
+    }
+
+    private Resposta trocarSenha(PedidoDeTrocaSenha p) {
+        Optional<Long> id = jwtService.extrairUsuarioId(p.getToken());
+        if (id.isEmpty()) return erro("SESSAO_INVALIDA");
+        if (vazio(p.getHashLoginAtual()) || vazio(p.getNovoSenhaMestraHash()) || vazio(p.getNovoSalt()) || p.getCredenciais() == null) {
+            return erro("CAMPO_OBRIGATORIO_AUSENTE");
+        }
+        List<TrocaSenhaRepository.CredencialRecifrada> recifradas = new ArrayList<>();
+        for (CredencialDto c : p.getCredenciais()) {
+            if (c == null || c.getCredencialId() == null || vazio(c.getDadosCifrados()) || vazio(c.getIv())) {
+                return erro("DADOS_INVALIDOS");
+            }
+            recifradas.add(new TrocaSenhaRepository.CredencialRecifrada(c.getCredencialId(), c.getDadosCifrados(), c.getIv()));
+        }
+        String username = usuarios.findById(id.get()).map(Usuario::getUsername).orElse("");
+        String chaveUsuario = "usuario:" + username;
+        if (limiteLogin.bloqueado(chaveUsuario, LimiteLogin.MAX_FALHAS_USUARIO)) {
+            return erro("MUITAS_TENTATIVAS");
+        }
+        switch (trocaSenha.trocar(id.get(), p.getHashLoginAtual(), p.getNovoSenhaMestraHash(), p.getNovoSalt(), recifradas)) {
+            case SENHA_ATUAL_INCORRETA -> {
+                limiteLogin.registrarFalha(chaveUsuario);
+                log.warn("Troca de senha recusada: senha atual incorreta para usuário {}", username);
+                return erro("SENHA_INCORRETA");
+            }
+            case CREDENCIAIS_DIFERENTES -> {
+                return erro("CREDENCIAIS_DESATUALIZADAS");
+            }
+            default -> {
+                limiteLogin.limpar(chaveUsuario);
+                log.info("Senha mestra trocada: usuário {} (id {}), {} credenciais recifradas", username, id.get(), recifradas.size());
+                return ok(mapa());
+            }
+        }
     }
 
     private static Resposta ok(Map<String, Object> dados) {
